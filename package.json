@@ -1,0 +1,50 @@
+{
+  "name": "agent-bureau-furnish",
+  "version": "0.1.0",
+  "description": "Sign and verify outcome events for The Agent Bureau: Ed25519 signatures over RFC 8785 canonical JSON, with CSV import.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "furnish": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RunTimeAdmin/agent-bureau-furnish.git"
+  },
+  "homepage": "https://theagentbureau.xyz",
+  "bugs": {
+    "url": "https://github.com/RunTimeAdmin/agent-bureau-furnish/issues"
+  },
+  "keywords": [
+    "ai-agents",
+    "erc-8004",
+    "x402",
+    "ed25519",
+    "rfc8785",
+    "agent-bureau"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "schema": "node dist/cli.js schema"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "5.9.3",
+    "vitest": "^2.1.9"
+  }
+}

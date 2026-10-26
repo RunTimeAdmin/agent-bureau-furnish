@@ -1,0 +1,4 @@
+event_id,outcome,occurred_at,subject_chain,subject_registry,subject_id,subject_wallet,amount_value,amount_asset,amount_chain,evidence_tx_hash,evidence_log_ref
+inv-1001,paid,2026-10-20T14:03:00Z,base,erc8004,1234,,12.50,USDC,base,,
+inv-1002,payment_failed,2026-10-21T08:00:00Z,arc,erc8004,77,,30.00,USDC,arc,0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd,
+blk-7,access_revoked,2026-10-22T09:15:00Z,,,,0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,,,,,"gateway log 2026-10-22, line 88"
