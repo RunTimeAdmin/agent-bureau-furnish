@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import { sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { canonicalize } from "../src/canonical.js";
-import { verifyCommand } from "../src/cli.js";
-import { csvToEvents, parseCsv } from "../src/csv.js";
+import { runCli, safe, verifyCommand } from "../src/cli.js";
+import { buildEvent, csvToEvents, parseCsv } from "../src/csv.js";
 import {
   outcomeEventJsonSchema,
   unsignedEventSchema,
@@ -253,5 +253,50 @@ describe("verify --furnisher binding", () => {
     expect(() =>
       run(["--public-key", publicKey, "--furnisher", "acme", file])
     ).toThrow(/furnisher/);
+  });
+});
+
+describe("hardening", () => {
+  it("does not let JSON input override the tool-set furnisher_id", () => {
+    const result = buildEvent("fur_real01", {
+      event_id: "d-1",
+      outcome: "delivered",
+      occurred_at: "2026-10-20T14:03:00Z",
+      subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
+      furnisher_id: "fur_evil01",
+      schema_version: "9",
+    });
+    expect("event" in result && result.event.furnisher_id).toBe("fur_real01");
+    expect("event" in result && result.event.schema_version).toBe("0");
+  });
+
+  it("rejects a CSV with a duplicate header instead of dropping data", () => {
+    const csv = [
+      "event_id,event_id,outcome,occurred_at,subject_wallet",
+      "a,b,delivered,2026-10-20T14:03:00Z,0x" + "1".repeat(40),
+    ].join("\n");
+    const { events, errors } = csvToEvents(csv, "fur_acme01");
+    expect(events).toHaveLength(0);
+    expect(errors[0].message).toContain("duplicate columns: event_id");
+  });
+
+  it("strips control characters from echoed text", () => {
+    expect(safe("ok\u001b[2Kfaked\u0007\u007f")).toBe("ok [2Kfaked  ");
+  });
+
+  it("does not dispatch inherited object properties as commands", () => {
+    const errors: string[] = [];
+    const spy = vi.spyOn(console, "error").mockImplementation((...a) =>
+      errors.push(a.join(" "))
+    );
+    for (const name of ["constructor", "__proto__", "toString"]) {
+      process.exitCode = 0;
+      runCli([name]);
+      expect(process.exitCode).toBe(1);
+      expect(errors.join("\n")).toContain(`Unknown command: ${name}`);
+      errors.length = 0;
+    }
+    spy.mockRestore();
+    process.exitCode = 0;
   });
 });
