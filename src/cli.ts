@@ -35,6 +35,15 @@ const USAGE = `furnish: sign and verify outcome events for The Agent Bureau (v0)
 
 class UsageError extends Error {}
 
+// Furnisher-supplied text (bad column names, rejected values, zod messages) is
+// echoed to the operator's console. Strip control characters first so a crafted
+// file cannot write terminal escape sequences that hide failures or fake the
+// result line.
+export function safe(text: string): string {
+  // eslint-disable-next-line no-control-regex
+  return text.replace(/[\u0000-\u001f\u007f-\u009f]/g, " ");
+}
+
 function readEvents(file: string, furnisherId: string) {
   const text = readFileSync(file, "utf8");
   if (file.toLowerCase().endsWith(".csv")) return csvToEvents(text, furnisherId);
@@ -60,7 +69,8 @@ function readEvents(file: string, furnisherId: string) {
 function loadValidEvents(input: string, furnisherId: string) {
   const { events, errors } = readEvents(input, furnisherId);
   if (errors.length) {
-    for (const { line, message } of errors) console.error(`${input}:${line}: ${message}`);
+    for (const { line, message } of errors)
+      console.error(`${input}:${line}: ${safe(message)}`);
     console.error(`${errors.length} event(s) failed.`);
     process.exitCode = 1;
     return null;
@@ -157,7 +167,7 @@ export function verifyCommand(args: string[]) {
       if (!text.trim()) return;
       const fail = (reason: string) => {
         invalid++;
-        console.error(`${input}:${index + 1}: ${reason}`);
+        console.error(`${input}:${index + 1}: ${safe(reason)}`);
       };
       let item: unknown;
       try {
@@ -206,7 +216,10 @@ export function runCli(argv: string[]): void {
     if (command === "--help" || command === "-h") {
       console.log(USAGE);
     } else {
-      const run = command ? commands[command] : undefined;
+      // Object.hasOwn so an argument like "constructor" or "__proto__" cannot
+      // resolve to an inherited function instead of a real command.
+      const run =
+        command && Object.hasOwn(commands, command) ? commands[command] : undefined;
       if (!run) throw new UsageError(command ? `Unknown command: ${command}` : "No command given");
       run(rest);
     }

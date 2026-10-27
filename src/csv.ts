@@ -61,10 +61,12 @@ export function buildEvent(
   furnisherId: string,
   input: Record<string, unknown>
 ): { event: UnsignedEvent } | { error: string } {
+  // The tool sets schema_version and furnisher_id; spreading the caller's
+  // input first means a JSON input file cannot override them with its own.
   const parsed = unsignedEventSchema.safeParse({
+    ...input,
     schema_version: SCHEMA_VERSION,
     furnisher_id: furnisherId,
-    ...input,
   });
   return parsed.success
     ? { event: parsed.data }
@@ -81,10 +83,16 @@ export function csvToEvents(
     name => !(CSV_COLUMNS as readonly string[]).includes(name)
   );
   const missing = REQUIRED_COLUMNS.filter(name => !columns.includes(name));
-  if (unknown.length || missing.length) {
+  // A repeated column would make cell() read only the first and silently drop
+  // the rest, so reject duplicate headers outright.
+  const duplicates = [
+    ...new Set(columns.filter((name, i) => columns.indexOf(name) !== i)),
+  ];
+  if (unknown.length || missing.length || duplicates.length) {
     const problems = [
       unknown.length && `unknown columns: ${unknown.join(", ")}`,
       missing.length && `missing columns: ${missing.join(", ")}`,
+      duplicates.length && `duplicate columns: ${duplicates.join(", ")}`,
     ].filter(Boolean);
     return { events: [], errors: [{ line: 1, message: problems.join("; ") }] };
   }
