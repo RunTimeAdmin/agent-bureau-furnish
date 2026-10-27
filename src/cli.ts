@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { buildEvent, csvToEvents, type RowError } from "./csv.js";
 import { outcomeEventJsonSchema, type UnsignedEvent } from "./event.js";
@@ -24,8 +25,9 @@ const USAGE = `furnish: sign and verify outcome events for The Agent Bureau (v0)
   furnish sign --key <private-key-file> --furnisher <fur_id> --out <signed.jsonl> <events.csv|events.json>
       Check every event and sign them all. Writes nothing if any event fails.
 
-  furnish verify --public-key <ed25519:...> <signed.jsonl>
-      Check the format and signature of every event in a signed file.
+  furnish verify --public-key <ed25519:...> [--furnisher <fur_id>] <signed.jsonl>
+      Check the format and signature of every event in a signed file. With
+      --furnisher, also require every event to carry that furnisher id.
 
   furnish schema [--out <file>]
       Write the JSON Schema for outcome events (default: schema/outcome-event-v0.json).
@@ -121,15 +123,29 @@ function signCommand(args: string[]) {
   console.log(`Signed ${events.length} event(s) to ${values.out}.`);
 }
 
-function verifyCommand(args: string[]) {
+export function verifyCommand(args: string[]) {
   const { values, positionals } = parseArgs({
     args,
     allowPositionals: true,
-    options: { "public-key": { type: "string" } },
+    options: {
+      "public-key": { type: "string" },
+      furnisher: { type: "string" },
+    },
   });
   const [input] = positionals;
   if (!values["public-key"] || !input) {
     throw new UsageError("verify needs --public-key and a signed file");
+  }
+  // A valid signature binds an event to a key, not to a claimed furnisher_id.
+  // When --furnisher is given (the Bureau knows who sent the file), every line
+  // must carry that id, so one furnisher cannot sign events under another's id
+  // and a file cannot mix furnishers.
+  const expectedFurnisher = values.furnisher;
+  if (
+    expectedFurnisher !== undefined &&
+    !/^fur_[a-z0-9]{6,32}$/.test(expectedFurnisher)
+  ) {
+    throw new UsageError("--furnisher must look like fur_acme01");
   }
   const publicKey = parsePublicKey(values["public-key"]);
   const seen = new Set<string>();
@@ -151,6 +167,14 @@ function verifyCommand(args: string[]) {
       }
       const result = verifyEvent(item, publicKey);
       if (!result.ok) return fail(result.reason);
+      if (
+        expectedFurnisher !== undefined &&
+        result.event.furnisher_id !== expectedFurnisher
+      ) {
+        return fail(
+          `furnisher ${result.event.furnisher_id} does not match --furnisher ${expectedFurnisher}`
+        );
+      }
       const key = `${result.event.furnisher_id}/${result.event.event_id}`;
       if (seen.has(key)) return fail(`duplicate event ${key}`);
       seen.add(key);
@@ -176,19 +200,28 @@ const commands: Record<string, (args: string[]) => void> = {
   schema: schemaCommand,
 };
 
-const [command, ...rest] = process.argv.slice(2);
-try {
-  if (command === "--help" || command === "-h") {
-    console.log(USAGE);
-  } else {
-    const run = command ? commands[command] : undefined;
-    if (!run) throw new UsageError(command ? `Unknown command: ${command}` : "No command given");
-    run(rest);
+export function runCli(argv: string[]): void {
+  const [command, ...rest] = argv;
+  try {
+    if (command === "--help" || command === "-h") {
+      console.log(USAGE);
+    } else {
+      const run = command ? commands[command] : undefined;
+      if (!run) throw new UsageError(command ? `Unknown command: ${command}` : "No command given");
+      run(rest);
+    }
+  } catch (error) {
+    const code = (error as { code?: string }).code ?? "";
+    const usage = error instanceof UsageError || code.startsWith("ERR_PARSE_ARGS");
+    console.error(error instanceof Error ? error.message : String(error));
+    if (usage) console.error(`\n${USAGE}`);
+    process.exitCode = 1;
   }
-} catch (error) {
-  const code = (error as { code?: string }).code ?? "";
-  const usage = error instanceof UsageError || code.startsWith("ERR_PARSE_ARGS");
-  console.error(error instanceof Error ? error.message : String(error));
-  if (usage) console.error(`\n${USAGE}`);
-  process.exitCode = 1;
+}
+
+// Run only when invoked as the CLI, so importing this module for its exports
+// (for example in tests) does not parse argv or touch process.exitCode.
+const entry = process.argv[1];
+if (entry && import.meta.url === pathToFileURL(entry).href) {
+  runCli(process.argv.slice(2));
 }

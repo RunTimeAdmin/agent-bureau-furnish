@@ -1,8 +1,11 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { sign } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { canonicalize } from "../src/canonical.js";
+import { verifyCommand } from "../src/cli.js";
 import { csvToEvents, parseCsv } from "../src/csv.js";
 import {
   outcomeEventJsonSchema,
@@ -187,5 +190,68 @@ describe("CSV import", () => {
 describe("published JSON Schema", () => {
   it("matches the zod schema (run npm run schema after changing event.ts)", () => {
     expect(JSON.parse(readFileSync(SCHEMA_FILE, "utf8"))).toEqual(outcomeEventJsonSchema());
+  });
+});
+
+describe("verify --furnisher binding", () => {
+  const logs: string[] = [];
+  afterEach(() => {
+    vi.restoreAllMocks();
+    process.exitCode = 0;
+    logs.length = 0;
+  });
+
+  // Signs two events with one key but different furnisher ids, then verifies.
+  function signedFile(): { file: string; publicKey: string } {
+    const { privateKeyPem, publicKey } = generateFurnisherKey();
+    const key = parsePrivateKey(privateKeyPem);
+    const lines = ["fur_acme01", "fur_victim01"].map((furnisher_id, i) =>
+      JSON.stringify(
+        signEvent({ ...paid, furnisher_id, event_id: `inv-${i}` }, key)
+      )
+    );
+    const dir = mkdtempSync(path.join(tmpdir(), "furnish-"));
+    const file = path.join(dir, "signed.jsonl");
+    writeFileSync(file, lines.join("\n") + "\n");
+    return { file, publicKey };
+  }
+
+  function run(args: string[]): { exitCode: number; errors: string } {
+    const errors: string[] = [];
+    vi.spyOn(console, "log").mockImplementation((...a) => logs.push(a.join(" ")));
+    vi.spyOn(console, "error").mockImplementation((...a) =>
+      errors.push(a.join(" "))
+    );
+    process.exitCode = 0;
+    verifyCommand(args);
+    return { exitCode: Number(process.exitCode) || 0, errors: errors.join("\n") };
+  }
+
+  it("accepts both lines when no furnisher is required", () => {
+    const { file, publicKey } = signedFile();
+    const { exitCode } = run(["--public-key", publicKey, file]);
+    expect(logs.join("\n")).toContain("2 valid, 0 invalid.");
+    expect(exitCode).toBe(0);
+  });
+
+  it("rejects a line whose furnisher_id is not the expected one", () => {
+    const { file, publicKey } = signedFile();
+    const { exitCode, errors } = run([
+      "--public-key",
+      publicKey,
+      "--furnisher",
+      "fur_acme01",
+      file,
+    ]);
+    expect(errors).toContain("fur_victim01 does not match --furnisher fur_acme01");
+    expect(logs.join("\n")).toContain("1 valid, 1 invalid.");
+    expect(exitCode).toBe(1);
+  });
+
+  it("rejects a malformed --furnisher", () => {
+    const { file, publicKey } = signedFile();
+    expect(() =>
+      run(["--public-key", publicKey, "--furnisher", "acme", file])
+    ).toThrow(/furnisher/);
   });
 });

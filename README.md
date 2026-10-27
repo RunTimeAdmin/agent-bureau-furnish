@@ -39,6 +39,7 @@ furnish verify --public-key ed25519:... signed.jsonl
 
 - `keygen` never overwrites a file. Keep the private key file to yourself; the Bureau only needs the public key.
 - `check` and `sign` report every problem by line. `sign` writes nothing unless every event passes.
+- `verify` checks format and signature. Add `--furnisher fur_...` to also require every event to carry that furnisher id, which the Bureau does so one furnisher's key cannot sign events under another's id.
 - Input is CSV or a JSON array of events. `schema_version` and `furnisher_id` are filled in for you. Output is one signed event per line (JSON Lines).
 - Your furnisher id (`fur_...`) comes from the Bureau when you join.
 
