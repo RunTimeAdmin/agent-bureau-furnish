@@ -164,9 +164,9 @@ export function outcomeEventJsonSchema(): Record<string, unknown> {
   };
 }
 
-// --- Outcome event v1 (draft) --------------------------------------------
-// v1 is a draft kept beside v0, not yet the accepted format. It adds two
-// things to the same outcome rules:
+// --- Outcome event v1 -----------------------------------------------------
+// v1 is the format the Bureau and CounterAudit accept; v0 is kept for files
+// signed before it. v1 adds two things to the same outcome rules:
 //   - key_id: which signing key produced the signature, so a furnisher can
 //     rotate keys and old events stay attributable.
 //   - relation: an optional pointer to an earlier event, with an explicit
@@ -200,11 +200,13 @@ export const relationSchema = z
   })
   .strict();
 
+export const KEY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
+
 const baseV1 = {
   schema_version: z.literal(SCHEMA_VERSION_V1),
   furnisher_id: z.string().regex(/^fur_[a-z0-9]{6,32}$/),
   // A label for the signing key within the furnisher; rotating keys changes it.
-  key_id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/),
+  key_id: z.string().regex(KEY_ID_PATTERN),
   event_id: eventId,
   subject_ref: subjectRefSchema,
   occurred_at: z.iso.datetime(),
@@ -286,9 +288,9 @@ export function outcomeEventV1JsonSchema(): Record<string, unknown> {
   return {
     $schema: schema.$schema,
     $id: SCHEMA_URL_V1,
-    title: "Agent Bureau outcome event v1 (draft)",
+    title: "Agent Bureau outcome event v1",
     description:
-      "Draft v1 of an outcome event. Same outcome, amount and evidence rules as v0, plus a key_id naming the signing key and an optional relation (disputes, corrects, supersedes or withdraws) pointing at an earlier event_id. Not yet the accepted format. The signature is Ed25519 over the canonical form with the v1 signing context described in the agent-bureau-furnish README.",
+      "An outcome event a furnisher reports to The Agent Bureau, format v1. Same outcome, amount and evidence rules as v0, plus a key_id naming the signing key and an optional relation (disputes, corrects, supersedes or withdraws) pointing at an earlier event_id. The signature is Ed25519 over the canonical form with the v1 signing context described in the agent-bureau-furnish README.",
     ...Object.fromEntries(
       Object.entries(schema).filter(([key]) => key !== "$schema")
     ),

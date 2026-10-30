@@ -98,7 +98,7 @@ export function verifyEvent(input: unknown, publicKey: KeyObject): VerifyResult 
   return valid ? { ok: true, event: parsed.data } : { ok: false, reason: "signature does not match" };
 }
 
-// v1 signing (draft). Same scheme as v0 over the v1 context and schema.
+// v1 signing. Same scheme as v0 over the v1 context and schema.
 export function signEventV1(
   event: UnsignedEventV1,
   privateKey: KeyObject

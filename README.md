@@ -24,26 +24,28 @@ The examples below use `furnish`. With `npx`, write `npx github:RunTimeAdmin/age
 ## Use
 
 ```sh
-# 1. Once: create your signing key, then send the printed public key to the Bureau
+# 1. Once: create your signing key, choose a key id for it, and send the
+#    printed public key and the key id to the Bureau
 furnish keygen acme.key
 
 # 2. Check an export before sending it (no key needed)
-furnish check --furnisher fur_acme01 events.csv
+furnish check --furnisher fur_acme01 --key-id acme-2026-10 events.csv
 
 # 3. Sign it
-furnish sign --key acme.key --furnisher fur_acme01 --out signed.jsonl events.csv
+furnish sign --key acme.key --key-id acme-2026-10 --furnisher fur_acme01 --out signed.jsonl events.csv
 
 # 4. Optional: verify the signed file yourself
 furnish verify --public-key ed25519:... signed.jsonl
 ```
 
 - `keygen` never overwrites a file. Keep the private key file to yourself; the Bureau only needs the public key.
+- The key id is a name you choose for your key, such as `acme-2026-10`: up to 64 letters, digits or `. _ : -`, starting with a letter or digit. Choose a new one when you make a new key. One run signs with one key, so it is given once on the command line, not per row.
 - `check` and `sign` report every problem by line. `sign` writes nothing unless every event passes.
 - `verify` checks format and signature. Add `--furnisher fur_...` to also require every event to carry that furnisher id, which the Bureau does so one furnisher's key cannot sign events under another's id.
-- Input is CSV or a JSON array of events. `schema_version` and `furnisher_id` are filled in for you. Output is one signed event per line (JSON Lines).
+- Input is CSV or a JSON array of events. `schema_version`, `furnisher_id` and `key_id` are filled in for you. Output is one signed event per line (JSON Lines).
 - Your furnisher id (`fur_...`) comes from the Bureau when you join.
 
-See [`examples/events.csv`](examples/events.csv) for a starting point.
+See [`examples/events.csv`](examples/events.csv) for a starting point, and [`examples/events-v1.csv`](examples/events-v1.csv) for an event that corrects an earlier one.
 
 ## CSV columns
 
@@ -57,29 +59,32 @@ See [`examples/events.csv`](examples/events.csv) for a starting point.
 | `subject_did` | one subject | e.g. `did:countersig:...` |
 | `amount_value`, `amount_asset`, `amount_chain` | for `paid`, `refunded`, `payment_failed` | Value as a decimal string, e.g. `12.50` |
 | `evidence_tx_hash`, `evidence_counteraudit_packet`, `evidence_log_ref` | at least one for `payment_failed`, `not_delivered`, `access_revoked`, `policy_violation` | A log reference is anything that lets you find the record again, kept for 24 months |
+| `relation_type`, `relation_target_event_id` | optional; fill both or neither | Points this event at an earlier `event_id` of yours. Type is `disputes`, `corrects`, `supersedes` or `withdraws`. |
 
-Fill exactly one subject per row. Unknown columns are rejected, so a typo can't silently drop data. Report every outcome of a type for the agents you report on, good and bad.
+Fill exactly one subject per row. Unknown columns are rejected, so a typo can't silently drop data. There is no `key_id` column: give it once with `--key-id`. In JSON input, give `relation` as an object, e.g. `{"type": "corrects", "target_event_id": "inv-1001"}`. Report every outcome of a type for the agents you report on, good and bad.
 
 ## Format and signature
 
-The full rules are in [`src/event.ts`](src/event.ts), and the same rules as JSON Schema are in [`schema/outcome-event-v0.json`](schema/outcome-event-v0.json), also published at `https://theagentbureau.xyz/schemas/outcome-event-v0.json`.
+The full rules are in [`src/event.ts`](src/event.ts), and the same rules as JSON Schema are in [`schema/outcome-event-v1.json`](schema/outcome-event-v1.json) (`npm run schema` regenerates it).
+
+An event carries two fields that let it be checked and amended later:
+
+- `key_id`: which signing key produced the signature, so you can rotate keys without old events losing their attribution.
+- `relation` (optional): points at an earlier `event_id` of yours with an explicit type, so a later fact amends an earlier one instead of silently replacing it.
 
 Each event is signed with Ed25519 over the bytes of:
 
 ```
-agent-bureau/outcome-event/v0\n<the event without "signature", as RFC 8785 canonical JSON>
+agent-bureau/outcome-event/v1\n<the event without "signature", as RFC 8785 canonical JSON>
 ```
 
 RFC 8785 means object keys sorted at every level and no whitespace. The fixed prefix stops a signature your key made for something else from being replayed as an event. Public keys and signatures are written as `ed25519:` followed by base64url without padding.
 
-## v1 (draft, not yet accepted)
+CounterAudit, the Bureau's system of record for furnished events, accepts only this format: without `key_id` a key could not be rotated or revoked.
 
-A draft `v1` is defined alongside `v0` in [`src/event.ts`](src/event.ts), generated to [`schema/outcome-event-v1.json`](schema/outcome-event-v1.json) with `node dist/cli.js schema --version 1`. It keeps the same outcome, amount and evidence rules and adds two fields:
+## v0
 
-- `key_id`: which signing key produced the signature, so a furnisher can rotate keys without old events losing their attribution.
-- `relation` (optional): points at an earlier `event_id` with an explicit type (`disputes`, `corrects`, `supersedes` or `withdraws`), so a later fact can amend an earlier one instead of silently replacing it.
-
-v1 signs over the `agent-bureau/outcome-event/v1\n` prefix, a separate signing domain, so a v0 signature can never be accepted as a v1 event or the reverse. Keep sending `v0` until the Bureau announces that it accepts v1: the `sign`, `check` and `verify` commands still produce and read v0.
+v0 is the earlier format, with no `key_id` or `relation`, signed over the `agent-bureau/outcome-event/v0\n` prefix. Its schema is [`schema/outcome-event-v0.json`](schema/outcome-event-v0.json). Add `--version 0` to read or write it, for example to verify a file signed before v1. Under `--version 0`, `--key-id` and the relation columns are refused. The two formats sign over different prefixes, so a v0 signature can never pass as a v1 event or the reverse. CounterAudit refuses v0 events.
 
 ## No signature yet?
 
@@ -91,7 +96,7 @@ During the pilot, the Bureau also accepts an unsigned CSV through the channel ag
 npm install      # also builds dist/
 npm test
 npm run typecheck
-npm run schema   # after changing src/event.ts; a test fails until you do
+npm run schema   # after changing src/event.ts (add -- --version 0 for v0); a test fails until you do
 ```
 
 `zod` is pinned to an exact version on purpose: its JSON Schema output and date rules change between releases, and the furnisher and the Bureau must validate the same way.
