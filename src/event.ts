@@ -163,3 +163,134 @@ export function outcomeEventJsonSchema(): Record<string, unknown> {
     ),
   };
 }
+
+// --- Outcome event v1 (draft) --------------------------------------------
+// v1 is a draft kept beside v0, not yet the accepted format. It adds two
+// things to the same outcome rules:
+//   - key_id: which signing key produced the signature, so a furnisher can
+//     rotate keys and old events stay attributable.
+//   - relation: an optional pointer to an earlier event, with an explicit
+//     type (disputes, corrects, supersedes, withdraws), so a later fact can
+//     amend an earlier one instead of silently replacing it.
+// The signing domain is distinct (see sign.ts), so a v0 signature can never
+// verify as v1 or the reverse.
+
+export const SCHEMA_VERSION_V1 = "1";
+export const SCHEMA_URL_V1 =
+  "https://theagentbureau.xyz/schemas/outcome-event-v1.json";
+
+export const RELATION_TYPES = [
+  "disputes",
+  "corrects",
+  "supersedes",
+  "withdraws",
+] as const;
+
+const eventId = z.string().regex(/^[A-Za-z0-9._:-]{1,128}$/);
+
+// How one event points at an earlier one. target_event_id names the event;
+// confirming the target exists, is in the same furnisher/subject scope and
+// forms no cycle needs the whole event history, so it is the receiver's job,
+// not this tool's. The one rule the tool can check (no self-reference) is on
+// the event schema below.
+export const relationSchema = z
+  .object({
+    type: z.enum(RELATION_TYPES),
+    target_event_id: eventId,
+  })
+  .strict();
+
+const baseV1 = {
+  schema_version: z.literal(SCHEMA_VERSION_V1),
+  furnisher_id: z.string().regex(/^fur_[a-z0-9]{6,32}$/),
+  // A label for the signing key within the furnisher; rotating keys changes it.
+  key_id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/),
+  event_id: eventId,
+  subject_ref: subjectRefSchema,
+  occurred_at: z.iso.datetime(),
+  relation: relationSchema.optional(),
+};
+
+// Same outcome/amount/evidence rules as v0, over the v1 base.
+function eventSchemaV1<T extends z.ZodRawShape>(extra: T) {
+  return z.discriminatedUnion("outcome", [
+    z
+      .object({
+        ...baseV1,
+        ...extra,
+        outcome: z.enum(["paid", "refunded"]),
+        amount: amountSchema,
+        evidence: evidenceSchema.optional(),
+      })
+      .strict(),
+    z
+      .object({
+        ...baseV1,
+        ...extra,
+        outcome: z.literal("payment_failed"),
+        amount: amountSchema,
+        evidence: evidenceSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...baseV1,
+        ...extra,
+        outcome: z.enum(["not_delivered", "access_revoked", "policy_violation"]),
+        amount: amountSchema.optional(),
+        evidence: evidenceSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...baseV1,
+        ...extra,
+        outcome: z.enum(["delivered", "disputed"]),
+        amount: amountSchema.optional(),
+        evidence: evidenceSchema.optional(),
+      })
+      .strict(),
+  ]);
+}
+
+// An event cannot relate to itself; every other relation rule needs the full
+// history and belongs to the receiver.
+const noSelfRelation = (event: {
+  event_id: string;
+  relation?: { target_event_id: string };
+}) => event.relation?.target_event_id !== event.event_id;
+const noSelfRelationError = {
+  message: "relation.target_event_id cannot be this event's own event_id",
+  path: ["relation", "target_event_id"],
+};
+
+export const unsignedEventV1Schema = eventSchemaV1({}).refine(
+  noSelfRelation,
+  noSelfRelationError
+);
+export const signedEventV1Schema = eventSchemaV1({ signature }).refine(
+  noSelfRelation,
+  noSelfRelationError
+);
+
+export type UnsignedEventV1 = z.infer<typeof unsignedEventV1Schema>;
+export type SignedEventV1 = z.infer<typeof signedEventV1Schema>;
+
+export function outcomeEventV1JsonSchema(): Record<string, unknown> {
+  const schema = z.toJSONSchema(signedEventV1Schema, {
+    target: "draft-2020-12",
+    override: ctx => {
+      if (ctx.zodSchema === evidenceSchema) ctx.jsonSchema.minProperties = 1;
+    },
+  });
+  return {
+    $schema: schema.$schema,
+    $id: SCHEMA_URL_V1,
+    title: "Agent Bureau outcome event v1 (draft)",
+    description:
+      "Draft v1 of an outcome event. Same outcome, amount and evidence rules as v0, plus a key_id naming the signing key and an optional relation (disputes, corrects, supersedes or withdraws) pointing at an earlier event_id. Not yet the accepted format. The signature is Ed25519 over the canonical form with the v1 signing context described in the agent-bureau-furnish README.",
+    ...Object.fromEntries(
+      Object.entries(schema).filter(([key]) => key !== "$schema")
+    ),
+  };
+}
