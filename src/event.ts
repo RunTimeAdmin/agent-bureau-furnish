@@ -200,11 +200,13 @@ export const relationSchema = z
   })
   .strict();
 
+export const KEY_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/;
+
 const baseV1 = {
   schema_version: z.literal(SCHEMA_VERSION_V1),
   furnisher_id: z.string().regex(/^fur_[a-z0-9]{6,32}$/),
   // A label for the signing key within the furnisher; rotating keys changes it.
-  key_id: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$/),
+  key_id: z.string().regex(KEY_ID_PATTERN),
   event_id: eventId,
   subject_ref: subjectRefSchema,
   occurred_at: z.iso.datetime(),

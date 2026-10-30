@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,6 +31,10 @@ const SCHEMA_FILE = fileURLToPath(
 );
 const SCHEMA_FILE_V1 = fileURLToPath(
   new URL("../schema/outcome-event-v1.json", import.meta.url)
+);
+const EXAMPLE_CSV = fileURLToPath(new URL("../examples/events.csv", import.meta.url));
+const EXAMPLE_CSV_V1 = fileURLToPath(
+  new URL("../examples/events-v1.csv", import.meta.url)
 );
 
 const paid: UnsignedEvent = {
@@ -409,5 +413,220 @@ describe("JSON signing input (F-05)", () => {
     errSpy.mockRestore();
     logSpy.mockRestore();
     process.exitCode = 0;
+  });
+});
+
+describe("CSV import, v1 columns", () => {
+  const header =
+    "event_id,outcome,occurred_at,subject_wallet,relation_type,relation_target_event_id";
+  const wallet = `0x${"d".repeat(40)}`;
+  const v1 = { keyId: "key-2026-10" };
+
+  it("builds a relation from both columns and leaves it out when both are empty", () => {
+    const csv = [
+      header,
+      `d-1,delivered,2026-10-20T14:03:00Z,${wallet},,`,
+      `d-2,disputed,2026-10-21T14:03:00Z,${wallet},disputes,d-1`,
+    ].join("\n");
+    const { events, errors } = csvToEvents(csv, FURNISHER, v1);
+    expect(errors).toEqual([]);
+    expect(events[0]).toMatchObject({ schema_version: "1", key_id: "key-2026-10" });
+    expect(events[0]).not.toHaveProperty("relation");
+    expect(events[1]).toMatchObject({
+      key_id: "key-2026-10",
+      relation: { type: "disputes", target_event_id: "d-1" },
+    });
+  });
+
+  it("needs both relation columns or neither, a known type and no self-reference", () => {
+    const csv = [
+      header,
+      `d-1,delivered,2026-10-20T14:03:00Z,${wallet},corrects,`,
+      `d-2,delivered,2026-10-20T14:03:00Z,${wallet},,d-0`,
+      `d-3,delivered,2026-10-20T14:03:00Z,${wallet},replaces,d-0`,
+      `d-4,delivered,2026-10-20T14:03:00Z,${wallet},corrects,d-4`,
+    ].join("\n");
+    const { events, errors } = csvToEvents(csv, FURNISHER, v1);
+    expect(events).toHaveLength(0);
+    expect(errors.map(error => error.line)).toEqual([2, 3, 4, 5]);
+    const both = "fill both relation_type and relation_target_event_id, or neither";
+    expect(errors[0].message).toBe(both);
+    expect(errors[1].message).toBe(both);
+    expect(errors[2].message).toContain("relation.type");
+    expect(errors[3].message).toContain("cannot be this event's own event_id");
+  });
+
+  it("refuses v1-only columns under v0 instead of dropping them", () => {
+    const csv = [header, `d-1,delivered,2026-10-20T14:03:00Z,${wallet},,`].join("\n");
+    expect(csvToEvents(csv, FURNISHER)).toEqual({
+      events: [],
+      errors: [
+        {
+          line: 1,
+          message:
+            "v1-only columns: relation_type, relation_target_event_id (sign with --version 1, or remove them)",
+        },
+      ],
+    });
+  });
+
+  it("refuses a key_id column under either version", () => {
+    const csv = [
+      "event_id,outcome,occurred_at,subject_wallet,key_id",
+      `d-1,delivered,2026-10-20T14:03:00Z,${wallet},key-a`,
+    ].join("\n");
+    for (const options of [undefined, v1]) {
+      expect(csvToEvents(csv, FURNISHER, options).errors).toEqual([
+        { line: 1, message: "key_id is not a column: give it once with --key-id" },
+      ]);
+    }
+  });
+});
+
+describe("sign, check and verify with --version", () => {
+  const KEY_ID = "key-2026-10";
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    process.exitCode = 0;
+  });
+
+  // Runs the CLI with console output captured.
+  function cli(args: string[]): { exitCode: number; out: string; err: string } {
+    const out: string[] = [];
+    const err: string[] = [];
+    vi.spyOn(console, "log").mockImplementation((...a) => out.push(a.join(" ")));
+    vi.spyOn(console, "error").mockImplementation((...a) => err.push(a.join(" ")));
+    process.exitCode = 0;
+    runCli(args);
+    const exitCode = Number(process.exitCode) || 0;
+    vi.restoreAllMocks();
+    return { exitCode, out: out.join("\n"), err: err.join("\n") };
+  }
+
+  // A fresh key pair in a temporary folder, and where to write signed output.
+  function workspace() {
+    const dir = mkdtempSync(path.join(tmpdir(), "furnish-version-"));
+    const { privateKeyPem, publicKey } = generateFurnisherKey();
+    const keyFile = path.join(dir, "acme.key");
+    writeFileSync(keyFile, privateKeyPem);
+    return { dir, keyFile, publicKey, out: path.join(dir, "signed.jsonl") };
+  }
+
+  const readLines = (file: string) =>
+    readFileSync(file, "utf8").trim().split("\n").map(line => JSON.parse(line));
+
+  it("signs v1 events and verifies them, key_id and relation included", () => {
+    const { keyFile, publicKey, out } = workspace();
+    const signed = cli([
+      "sign", "--version", "1", "--key-id", KEY_ID, "--key", keyFile,
+      "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV_V1,
+    ]);
+    expect(signed).toMatchObject({ exitCode: 0, err: "" });
+    expect(signed.out).toContain("Signed 4 event(s)");
+
+    const events = readLines(out);
+    expect(events.map(event => [event.schema_version, event.key_id])).toEqual(
+      Array(4).fill(["1", KEY_ID])
+    );
+    expect(events[0]).not.toHaveProperty("relation");
+    expect(events[3]).toMatchObject({
+      event_id: "inv-1001-c1",
+      relation: { type: "corrects", target_event_id: "inv-1001" },
+    });
+    for (const event of events) {
+      expect(verifyEventV1(event, parsePublicKey(publicKey)).ok).toBe(true);
+    }
+
+    const verified = cli([
+      "verify", "--version", "1", "--public-key", publicKey, "--furnisher", FURNISHER, out,
+    ]);
+    expect(verified).toMatchObject({ exitCode: 0, out: "4 valid, 0 invalid." });
+
+    // Without --version 1, verify reads v0 and refuses every v1 line.
+    const asV0 = cli(["verify", "--public-key", publicKey, out]);
+    expect(asV0.exitCode).toBe(1);
+    expect(asV0.out).toBe("0 valid, 4 invalid.");
+  });
+
+  it("checks v1 events, and fills key_id for JSON input", () => {
+    expect(
+      cli(["check", "--version", "1", "--key-id", KEY_ID, "--furnisher", FURNISHER, EXAMPLE_CSV_V1])
+    ).toMatchObject({ exitCode: 0, out: "4 event(s) OK." });
+
+    const { dir, keyFile, publicKey, out } = workspace();
+    const json = path.join(dir, "events.json");
+    writeFileSync(
+      json,
+      JSON.stringify([
+        {
+          event_id: "d-2",
+          outcome: "disputed",
+          occurred_at: "2026-10-21T14:03:00Z",
+          subject_ref: { did: "did:countersig:agent-9" },
+          relation: { type: "disputes", target_event_id: "d-1" },
+        },
+      ])
+    );
+    cli([
+      "sign", "--version", "1", "--key-id", KEY_ID, "--key", keyFile,
+      "--furnisher", FURNISHER, "--out", out, json,
+    ]);
+    const [event] = readLines(out);
+    expect(event).toMatchObject({ schema_version: "1", key_id: KEY_ID, relation: { type: "disputes" } });
+    expect(verifyEventV1(event, parsePublicKey(publicKey)).ok).toBe(true);
+  });
+
+  it("needs a well-formed --key-id with --version 1, and writes nothing without it", () => {
+    const { keyFile, out } = workspace();
+    const base = ["--key", keyFile, "--furnisher", FURNISHER, "--out", out];
+    const missing = cli(["sign", "--version", "1", ...base, EXAMPLE_CSV_V1]);
+    expect(missing.exitCode).toBe(1);
+    expect(missing.err).toContain("--version 1 needs --key-id");
+    expect(existsSync(out)).toBe(false);
+
+    const bad = cli(["sign", "--version", "1", "--key-id", "has space", ...base, EXAMPLE_CSV_V1]);
+    expect(bad.exitCode).toBe(1);
+    expect(bad.err).toContain("--key-id must be 1 to 64 letters");
+    expect(existsSync(out)).toBe(false);
+
+    const check = cli(["check", "--version", "1", "--furnisher", FURNISHER, EXAMPLE_CSV_V1]);
+    expect(check.exitCode).toBe(1);
+    expect(check.err).toContain("--version 1 needs --key-id");
+  });
+
+  it("keeps v0 as the default and output unchanged", () => {
+    const { keyFile, publicKey, out } = workspace();
+    const signed = cli(["sign", "--key", keyFile, "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV]);
+    expect(signed).toMatchObject({ exitCode: 0, out: `Signed 3 event(s) to ${out}.` });
+    const events = readLines(out);
+    expect(events.map(event => event.schema_version)).toEqual(["0", "0", "0"]);
+    for (const event of events) {
+      expect(event).not.toHaveProperty("key_id");
+      expect(verifyEvent(event, parsePublicKey(publicKey)).ok).toBe(true);
+    }
+    expect(cli(["verify", "--public-key", publicKey, out])).toMatchObject({
+      exitCode: 0,
+      out: "3 valid, 0 invalid.",
+    });
+    expect(cli(["verify", "--version", "0", "--public-key", publicKey, out]).exitCode).toBe(0);
+    expect(cli(["check", "--furnisher", FURNISHER, EXAMPLE_CSV]).out).toBe("3 event(s) OK.");
+  });
+
+  it("refuses v1-only columns and --key-id under v0, and versions other than 0 or 1", () => {
+    const { keyFile, out } = workspace();
+    const signed = cli(["sign", "--key", keyFile, "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV_V1]);
+    expect(signed.exitCode).toBe(1);
+    expect(signed.err).toContain("v1-only columns: relation_type, relation_target_event_id");
+    expect(signed.err).toContain("Nothing was signed.");
+    expect(existsSync(out)).toBe(false);
+
+    const keyId = cli(["check", "--key-id", KEY_ID, "--furnisher", FURNISHER, EXAMPLE_CSV]);
+    expect(keyId.exitCode).toBe(1);
+    expect(keyId.err).toContain("--key-id needs --version 1");
+
+    const two = cli(["check", "--version", "2", "--furnisher", FURNISHER, EXAMPLE_CSV]);
+    expect(two.exitCode).toBe(1);
+    expect(two.err).toContain("--version must be 0 or 1");
   });
 });
