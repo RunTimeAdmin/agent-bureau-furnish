@@ -10,19 +10,30 @@ import { z } from "zod";
 import { canonicalize } from "./canonical.js";
 import {
   signedEventSchema,
+  signedEventV1Schema,
   unsignedEventSchema,
+  unsignedEventV1Schema,
   type SignedEvent,
+  type SignedEventV1,
   type UnsignedEvent,
+  type UnsignedEventV1,
 } from "./event.js";
 
 const KEY_PREFIX = "ed25519:";
 
 // Domain separation: a furnisher key that signs other things can never have
-// one of those signatures accepted as an outcome event, or the reverse.
+// one of those signatures accepted as an outcome event, or the reverse. Each
+// schema version has its own context, so a v0 signature cannot be replayed as
+// a v1 event or the reverse.
 const SIGNING_CONTEXT = "agent-bureau/outcome-event/v0\n";
+const SIGNING_CONTEXT_V1 = "agent-bureau/outcome-event/v1\n";
 
 export function signingPayload(event: UnsignedEvent): Buffer {
   return Buffer.from(SIGNING_CONTEXT + canonicalize(event), "utf8");
+}
+
+export function signingPayloadV1(event: UnsignedEventV1): Buffer {
+  return Buffer.from(SIGNING_CONTEXT_V1 + canonicalize(event), "utf8");
 }
 
 export function generateFurnisherKey(): {
@@ -81,6 +92,37 @@ export function verifyEvent(input: unknown, publicKey: KeyObject): VerifyResult 
   const valid = verify(
     null,
     signingPayload(unsigned as UnsignedEvent),
+    publicKey,
+    bytes
+  );
+  return valid ? { ok: true, event: parsed.data } : { ok: false, reason: "signature does not match" };
+}
+
+// v1 signing (draft). Same scheme as v0 over the v1 context and schema.
+export function signEventV1(
+  event: UnsignedEventV1,
+  privateKey: KeyObject
+): SignedEventV1 {
+  const valid = unsignedEventV1Schema.parse(event);
+  const signature = sign(null, signingPayloadV1(valid), privateKey);
+  return { ...valid, signature: KEY_PREFIX + signature.toString("base64url") };
+}
+
+export type VerifyResultV1 =
+  | { ok: true; event: SignedEventV1 }
+  | { ok: false; reason: string };
+
+export function verifyEventV1(
+  input: unknown,
+  publicKey: KeyObject
+): VerifyResultV1 {
+  const parsed = signedEventV1Schema.safeParse(input);
+  if (!parsed.success) return { ok: false, reason: z.prettifyError(parsed.error) };
+  const { signature, ...unsigned } = parsed.data;
+  const bytes = Buffer.from(signature.slice(KEY_PREFIX.length), "base64url");
+  const valid = verify(
+    null,
+    signingPayloadV1(unsigned as UnsignedEventV1),
     publicKey,
     bytes
   );

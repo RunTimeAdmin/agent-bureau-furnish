@@ -9,25 +9,44 @@ import { runCli, safe, verifyCommand } from "../src/cli.js";
 import { buildEvent, csvToEvents, parseCsv } from "../src/csv.js";
 import {
   outcomeEventJsonSchema,
+  outcomeEventV1JsonSchema,
   unsignedEventSchema,
+  unsignedEventV1Schema,
   type UnsignedEvent,
+  type UnsignedEventV1,
 } from "../src/event.js";
 import {
   generateFurnisherKey,
   parsePrivateKey,
   parsePublicKey,
   signEvent,
+  signEventV1,
   verifyEvent,
+  verifyEventV1,
 } from "../src/sign.js";
 
 const FURNISHER = "fur_test01";
 const SCHEMA_FILE = fileURLToPath(
   new URL("../schema/outcome-event-v0.json", import.meta.url)
 );
+const SCHEMA_FILE_V1 = fileURLToPath(
+  new URL("../schema/outcome-event-v1.json", import.meta.url)
+);
 
 const paid: UnsignedEvent = {
   schema_version: "0",
   furnisher_id: FURNISHER,
+  event_id: "inv-1001",
+  subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
+  occurred_at: "2026-10-20T14:03:00Z",
+  outcome: "paid",
+  amount: { value: "12.50", asset: "USDC", chain: "base" },
+};
+
+const paidV1: UnsignedEventV1 = {
+  schema_version: "1",
+  furnisher_id: FURNISHER,
+  key_id: "key-2026-10",
   event_id: "inv-1001",
   subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
   occurred_at: "2026-10-20T14:03:00Z",
@@ -132,6 +151,68 @@ describe("signing", () => {
   });
 });
 
+describe("outcome event v1 (draft)", () => {
+  const parseV1 = (patch: Record<string, unknown>) =>
+    unsignedEventV1Schema.safeParse({ ...paidV1, ...patch }).success;
+
+  it("carries over the v0 outcome rules", () => {
+    expect(parseV1({})).toBe(true);
+    expect(parseV1({ amount: undefined })).toBe(false);
+    expect(
+      parseV1({ outcome: "policy_violation", amount: undefined, evidence: { log_ref: "fw#1" } })
+    ).toBe(true);
+  });
+
+  it("requires a key_id", () => {
+    expect(parseV1({ key_id: undefined })).toBe(false);
+    expect(parseV1({ key_id: "has space" })).toBe(false);
+  });
+
+  it("takes an optional, well-formed relation to another event", () => {
+    expect(parseV1({ relation: { type: "corrects", target_event_id: "inv-0999" } })).toBe(true);
+    expect(parseV1({ relation: { type: "withdraws", target_event_id: "inv-0999" } })).toBe(true);
+    expect(parseV1({ relation: { type: "bogus", target_event_id: "inv-0999" } })).toBe(false);
+    expect(parseV1({ relation: { type: "corrects", target_event_id: "" } })).toBe(false);
+    expect(parseV1({ relation: { type: "corrects" } })).toBe(false);
+    expect(
+      parseV1({ relation: { type: "corrects", target_event_id: "inv-0999", note: "x" } })
+    ).toBe(false);
+  });
+
+  it("rejects a relation that points at the event's own id", () => {
+    expect(parseV1({ relation: { type: "supersedes", target_event_id: "inv-1001" } })).toBe(false);
+  });
+
+  it("round-trips a signed v1 event, with and without a relation", () => {
+    const { privateKey, publicKey } = keys();
+    const signed = signEventV1(paidV1, privateKey);
+    expect(verifyEventV1(signed, publicKey)).toEqual({ ok: true, event: signed });
+
+    const corrected = signEventV1(
+      { ...paidV1, event_id: "inv-1002", relation: { type: "corrects", target_event_id: "inv-1001" } },
+      privateKey
+    );
+    expect(verifyEventV1(corrected, publicKey).ok).toBe(true);
+  });
+
+  it("rejects a changed event, another key, and a signature without the v1 context", () => {
+    const { privateKey, publicKey } = keys();
+    const signed = signEventV1(paidV1, privateKey);
+    const changed = { ...signed, key_id: "key-other" };
+    expect(verifyEventV1(changed, publicKey).ok).toBe(false);
+    expect(verifyEventV1(signed, keys().publicKey).ok).toBe(false);
+
+    const bare = sign(null, Buffer.from(canonicalize(paidV1)), privateKey).toString("base64url");
+    expect(verifyEventV1({ ...paidV1, signature: `ed25519:${bare}` }, publicKey).ok).toBe(false);
+  });
+
+  it("keeps v0 and v1 apart: neither verifies as the other", () => {
+    const { privateKey, publicKey } = keys();
+    expect(verifyEventV1(signEvent(paid, privateKey), publicKey).ok).toBe(false);
+    expect(verifyEvent(signEventV1(paidV1, privateKey), publicKey).ok).toBe(false);
+  });
+});
+
 describe("CSV import", () => {
   const header =
     "event_id,outcome,occurred_at,subject_chain,subject_registry,subject_id,subject_wallet,amount_value,amount_asset,amount_chain,evidence_log_ref";
@@ -190,6 +271,10 @@ describe("CSV import", () => {
 describe("published JSON Schema", () => {
   it("matches the zod schema (run npm run schema after changing event.ts)", () => {
     expect(JSON.parse(readFileSync(SCHEMA_FILE, "utf8"))).toEqual(outcomeEventJsonSchema());
+  });
+
+  it("matches the v1 zod schema (run `node dist/cli.js schema --version 1`)", () => {
+    expect(JSON.parse(readFileSync(SCHEMA_FILE_V1, "utf8"))).toEqual(outcomeEventV1JsonSchema());
   });
 });
 

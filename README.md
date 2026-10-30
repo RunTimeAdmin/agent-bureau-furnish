@@ -72,6 +72,15 @@ agent-bureau/outcome-event/v0\n<the event without "signature", as RFC 8785 canon
 
 RFC 8785 means object keys sorted at every level and no whitespace. The fixed prefix stops a signature your key made for something else from being replayed as an event. Public keys and signatures are written as `ed25519:` followed by base64url without padding.
 
+## v1 (draft, not yet accepted)
+
+A draft `v1` is defined alongside `v0` in [`src/event.ts`](src/event.ts), generated to [`schema/outcome-event-v1.json`](schema/outcome-event-v1.json) with `node dist/cli.js schema --version 1`. It keeps the same outcome, amount and evidence rules and adds two fields:
+
+- `key_id`: which signing key produced the signature, so a furnisher can rotate keys without old events losing their attribution.
+- `relation` (optional): points at an earlier `event_id` with an explicit type (`disputes`, `corrects`, `supersedes` or `withdraws`), so a later fact can amend an earlier one instead of silently replacing it.
+
+v1 signs over the `agent-bureau/outcome-event/v1\n` prefix, a separate signing domain, so a v0 signature can never be accepted as a v1 event or the reverse. Keep sending `v0` until the Bureau announces that it accepts v1: the `sign`, `check` and `verify` commands still produce and read v0.
+
 ## No signature yet?
 
 During the pilot, the Bureau also accepts an unsigned CSV through the channel agreed when you join. Run `furnish check` on it first. Those events are marked "unsigned" on Bureau files, so signing is the better route.

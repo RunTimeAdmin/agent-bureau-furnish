@@ -4,7 +4,11 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { buildEvent, csvToEvents, type RowError } from "./csv.js";
-import { outcomeEventJsonSchema, type UnsignedEvent } from "./event.js";
+import {
+  outcomeEventJsonSchema,
+  outcomeEventV1JsonSchema,
+  type UnsignedEvent,
+} from "./event.js";
 import {
   generateFurnisherKey,
   parsePrivateKey,
@@ -29,8 +33,9 @@ const USAGE = `furnish: sign and verify outcome events for The Agent Bureau (v0)
       Check the format and signature of every event in a signed file. With
       --furnisher, also require every event to carry that furnisher id.
 
-  furnish schema [--out <file>]
-      Write the JSON Schema for outcome events (default: schema/outcome-event-v0.json).
+  furnish schema [--version 0|1] [--out <file>]
+      Write the JSON Schema for outcome events (default: the v0 schema at
+      schema/outcome-event-v0.json). --version 1 writes the draft v1 schema.
 `;
 
 class UsageError extends Error {}
@@ -195,10 +200,18 @@ export function verifyCommand(args: string[]) {
 }
 
 function schemaCommand(args: string[]) {
-  const { values } = parseArgs({ args, options: { out: { type: "string" } } });
-  const out = values.out ?? path.join("schema", "outcome-event-v0.json");
+  const { values } = parseArgs({
+    args,
+    options: { out: { type: "string" }, version: { type: "string" } },
+  });
+  const version = values.version ?? "0";
+  if (version !== "0" && version !== "1") {
+    throw new UsageError("--version must be 0 or 1");
+  }
+  const build = version === "1" ? outcomeEventV1JsonSchema : outcomeEventJsonSchema;
+  const out = values.out ?? path.join("schema", `outcome-event-v${version}.json`);
   mkdirSync(path.dirname(out), { recursive: true });
-  writeFileSync(out, JSON.stringify(outcomeEventJsonSchema(), null, 2) + "\n");
+  writeFileSync(out, JSON.stringify(build(), null, 2) + "\n");
   console.log(`Wrote ${out}`);
 }
 
