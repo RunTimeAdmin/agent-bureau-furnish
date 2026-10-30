@@ -300,3 +300,29 @@ describe("hardening", () => {
     process.exitCode = 0;
   });
 });
+
+describe("JSON signing input (F-05)", () => {
+  it("rejects a repeated event_id in a JSON batch, as CSV does", () => {
+    const event = {
+      event_id: "dup-1",
+      outcome: "delivered",
+      occurred_at: "2026-10-20T14:03:00Z",
+      subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
+    };
+    const dir = mkdtempSync(path.join(tmpdir(), "furnish-json-"));
+    const file = path.join(dir, "events.json");
+    writeFileSync(file, JSON.stringify([event, event]));
+    const errors: string[] = [];
+    const errSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation((...a) => errors.push(a.join(" ")));
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    process.exitCode = 0;
+    runCli(["check", "--furnisher", "fur_acme01", file]);
+    expect(process.exitCode).toBe(1);
+    expect(errors.join("\n")).toContain("event_id dup-1 appears more than once");
+    errSpy.mockRestore();
+    logSpy.mockRestore();
+    process.exitCode = 0;
+  });
+});

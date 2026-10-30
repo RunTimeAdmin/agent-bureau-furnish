@@ -57,10 +57,24 @@ function readEvents(file: string, furnisherId: string) {
   if (!Array.isArray(items)) throw new UsageError(`${file} must hold a JSON array of events`);
   const events: UnsignedEvent[] = [];
   const errors: RowError[] = [];
+  // Reject a repeated event_id within the batch, as the CSV path does, so a
+  // JSON array cannot be signed with duplicate (furnisher_id, event_id) lines.
+  const seen = new Set<string>();
   items.forEach((item, index) => {
     const result = buildEvent(furnisherId, item as Record<string, unknown>);
-    if ("error" in result) errors.push({ line: index + 1, message: result.error });
-    else events.push(result.event);
+    if ("error" in result) {
+      errors.push({ line: index + 1, message: result.error });
+      return;
+    }
+    if (seen.has(result.event.event_id)) {
+      errors.push({
+        line: index + 1,
+        message: `event_id ${result.event.event_id} appears more than once`,
+      });
+      return;
+    }
+    seen.add(result.event.event_id);
+    events.push(result.event);
   });
   return { events, errors };
 }
