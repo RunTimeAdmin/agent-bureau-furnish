@@ -318,7 +318,7 @@ describe("verify --furnisher binding", () => {
 
   it("accepts both lines when no furnisher is required", () => {
     const { file, publicKey } = signedFile();
-    const { exitCode } = run(["--public-key", publicKey, file]);
+    const { exitCode } = run(["--version", "0", "--public-key", publicKey, file]);
     expect(logs.join("\n")).toContain("2 valid, 0 invalid.");
     expect(exitCode).toBe(0);
   });
@@ -326,6 +326,8 @@ describe("verify --furnisher binding", () => {
   it("rejects a line whose furnisher_id is not the expected one", () => {
     const { file, publicKey } = signedFile();
     const { exitCode, errors } = run([
+      "--version",
+      "0",
       "--public-key",
       publicKey,
       "--furnisher",
@@ -407,7 +409,7 @@ describe("JSON signing input (F-05)", () => {
       .mockImplementation((...a) => errors.push(a.join(" ")));
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     process.exitCode = 0;
-    runCli(["check", "--furnisher", "fur_acme01", file]);
+    runCli(["check", "--key-id", "k1", "--furnisher", "fur_acme01", file]);
     expect(process.exitCode).toBe(1);
     expect(errors.join("\n")).toContain("event_id dup-1 appears more than once");
     errSpy.mockRestore();
@@ -543,8 +545,8 @@ describe("sign, check and verify with --version", () => {
     ]);
     expect(verified).toMatchObject({ exitCode: 0, out: "4 valid, 0 invalid." });
 
-    // Without --version 1, verify reads v0 and refuses every v1 line.
-    const asV0 = cli(["verify", "--public-key", publicKey, out]);
+    // With --version 0, verify reads v0 and refuses every v1 line.
+    const asV0 = cli(["verify", "--version", "0", "--public-key", publicKey, out]);
     expect(asV0.exitCode).toBe(1);
     expect(asV0.out).toBe("0 valid, 4 invalid.");
   });
@@ -582,7 +584,13 @@ describe("sign, check and verify with --version", () => {
     const base = ["--key", keyFile, "--furnisher", FURNISHER, "--out", out];
     const missing = cli(["sign", "--version", "1", ...base, EXAMPLE_CSV_V1]);
     expect(missing.exitCode).toBe(1);
-    expect(missing.err).toContain("--version 1 needs --key-id");
+    expect(missing.err).toContain("--key-id is required");
+    expect(existsSync(out)).toBe(false);
+
+    // v1 is the default, so the same holds without --version.
+    const byDefault = cli(["sign", ...base, EXAMPLE_CSV_V1]);
+    expect(byDefault.exitCode).toBe(1);
+    expect(byDefault.err).toContain("--key-id is required");
     expect(existsSync(out)).toBe(false);
 
     const bad = cli(["sign", "--version", "1", "--key-id", "has space", ...base, EXAMPLE_CSV_V1]);
@@ -592,12 +600,22 @@ describe("sign, check and verify with --version", () => {
 
     const check = cli(["check", "--version", "1", "--furnisher", FURNISHER, EXAMPLE_CSV_V1]);
     expect(check.exitCode).toBe(1);
-    expect(check.err).toContain("--version 1 needs --key-id");
+    expect(check.err).toContain("--key-id is required");
   });
 
-  it("keeps v0 as the default and output unchanged", () => {
+  it("signs v1 by default", () => {
     const { keyFile, publicKey, out } = workspace();
-    const signed = cli(["sign", "--key", keyFile, "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV]);
+    const signed = cli(["sign", "--key-id", KEY_ID, "--key", keyFile, "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV]);
+    expect(signed).toMatchObject({ exitCode: 0, out: `Signed 3 event(s) to ${out}.` });
+    const events = readLines(out);
+    expect(events.map(event => [event.schema_version, event.key_id])).toEqual(Array(3).fill(["1", KEY_ID]));
+    expect(cli(["verify", "--public-key", publicKey, out])).toMatchObject({ exitCode: 0, out: "3 valid, 0 invalid." });
+    expect(cli(["check", "--key-id", KEY_ID, "--furnisher", FURNISHER, EXAMPLE_CSV]).out).toBe("3 event(s) OK.");
+  });
+
+  it("keeps v0 output unchanged under --version 0", () => {
+    const { keyFile, publicKey, out } = workspace();
+    const signed = cli(["sign", "--version", "0", "--key", keyFile, "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV]);
     expect(signed).toMatchObject({ exitCode: 0, out: `Signed 3 event(s) to ${out}.` });
     const events = readLines(out);
     expect(events.map(event => event.schema_version)).toEqual(["0", "0", "0"]);
@@ -605,25 +623,26 @@ describe("sign, check and verify with --version", () => {
       expect(event).not.toHaveProperty("key_id");
       expect(verifyEvent(event, parsePublicKey(publicKey)).ok).toBe(true);
     }
-    expect(cli(["verify", "--public-key", publicKey, out])).toMatchObject({
+    expect(cli(["verify", "--version", "0", "--public-key", publicKey, out])).toMatchObject({
       exitCode: 0,
       out: "3 valid, 0 invalid.",
     });
-    expect(cli(["verify", "--version", "0", "--public-key", publicKey, out]).exitCode).toBe(0);
-    expect(cli(["check", "--furnisher", FURNISHER, EXAMPLE_CSV]).out).toBe("3 event(s) OK.");
+    // The default reads v1 and refuses every v0 line.
+    expect(cli(["verify", "--public-key", publicKey, out])).toMatchObject({ exitCode: 1, out: "0 valid, 3 invalid." });
+    expect(cli(["check", "--version", "0", "--furnisher", FURNISHER, EXAMPLE_CSV]).out).toBe("3 event(s) OK.");
   });
 
   it("refuses v1-only columns and --key-id under v0, and versions other than 0 or 1", () => {
     const { keyFile, out } = workspace();
-    const signed = cli(["sign", "--key", keyFile, "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV_V1]);
+    const signed = cli(["sign", "--version", "0", "--key", keyFile, "--furnisher", FURNISHER, "--out", out, EXAMPLE_CSV_V1]);
     expect(signed.exitCode).toBe(1);
     expect(signed.err).toContain("v1-only columns: relation_type, relation_target_event_id");
     expect(signed.err).toContain("Nothing was signed.");
     expect(existsSync(out)).toBe(false);
 
-    const keyId = cli(["check", "--key-id", KEY_ID, "--furnisher", FURNISHER, EXAMPLE_CSV]);
+    const keyId = cli(["check", "--version", "0", "--key-id", KEY_ID, "--furnisher", FURNISHER, EXAMPLE_CSV]);
     expect(keyId.exitCode).toBe(1);
-    expect(keyId.err).toContain("--key-id needs --version 1");
+    expect(keyId.err).toContain("--key-id is not used with --version 0");
 
     const two = cli(["check", "--version", "2", "--furnisher", FURNISHER, EXAMPLE_CSV]);
     expect(two.exitCode).toBe(1);

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://theagentbureau.xyz/schemas/outcome-event-v1.json",
-  "title": "Agent Bureau outcome event v1 (draft)",
-  "description": "Draft v1 of an outcome event. Same outcome, amount and evidence rules as v0, plus a key_id naming the signing key and an optional relation (disputes, corrects, supersedes or withdraws) pointing at an earlier event_id. Not yet the accepted format. The signature is Ed25519 over the canonical form with the v1 signing context described in the agent-bureau-furnish README.",
+  "title": "Agent Bureau outcome event v1",
+  "description": "An outcome event a furnisher reports to The Agent Bureau, format v1. Same outcome, amount and evidence rules as v0, plus a key_id naming the signing key and an optional relation (disputes, corrects, supersedes or withdraws) pointing at an earlier event_id. The signature is Ed25519 over the canonical form with the v1 signing context described in the agent-bureau-furnish README.",
   "oneOf": [
     {
       "type": "object",

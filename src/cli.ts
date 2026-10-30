@@ -27,33 +27,34 @@ const USAGE = `furnish: sign and verify outcome events for The Agent Bureau
       Create an Ed25519 signing key and print the public key to register
       with the Bureau. Never share the private key file.
 
-  furnish check --furnisher <fur_id> [--version 1 --key-id <key_id>]
+  furnish check --furnisher <fur_id> --key-id <key_id>
                 <events.csv|events.json>
       Check every event without signing. Nothing is written.
 
   furnish sign --key <private-key-file> --furnisher <fur_id>
-               [--version 1 --key-id <key_id>] --out <signed.jsonl>
+               --key-id <key_id> --out <signed.jsonl>
                <events.csv|events.json>
       Check every event and sign them all. Writes nothing if any event fails.
 
   furnish verify --public-key <ed25519:...> [--furnisher <fur_id>]
-                 [--version 1] <signed.jsonl>
+                 <signed.jsonl>
       Check the format and signature of every event in a signed file. With
       --furnisher, also require every event to carry that furnisher id.
 
-  furnish schema [--version 0|1] [--out <file>]
-      Write the JSON Schema for outcome events (default: the v0 schema at
-      schema/outcome-event-v0.json). --version 1 writes the draft v1 schema.
+  furnish schema [--out <file>]
+      Write the JSON Schema for outcome events (default:
+      schema/outcome-event-v1.json).
 
-  --version 0|1 picks the event format. The default is 0. CounterAudit
-  accepts only v1. A v1 event names the key that signed it: pass the
-  key_id you registered with the public key as --key-id.
+  Events are format v1, which the Bureau and CounterAudit accept. A v1
+  event names the key that signed it: pass the key_id you registered with
+  the public key as --key-id. --version 0 reads and writes the earlier v0
+  format, which has no key_id or relation and which CounterAudit refuses.
 `;
 
 class UsageError extends Error {}
 
 function parseVersion(value: string | undefined): "0" | "1" {
-  const version = value ?? "0";
+  const version = value ?? "1";
   if (version !== "0" && version !== "1") {
     throw new UsageError("--version must be 0 or 1");
   }
@@ -67,12 +68,12 @@ function v1Options(
   keyId: string | undefined
 ): V1Options | undefined {
   if (parseVersion(version) === "0") {
-    if (keyId !== undefined) throw new UsageError("--key-id needs --version 1");
+    if (keyId !== undefined) throw new UsageError("--key-id is not used with --version 0");
     return undefined;
   }
   if (keyId === undefined) {
     throw new UsageError(
-      "--version 1 needs --key-id: the label you registered with your public key"
+      "--key-id is required: the key id you registered with your public key (v0 files need --version 0)"
     );
   }
   if (!KEY_ID_PATTERN.test(keyId)) {

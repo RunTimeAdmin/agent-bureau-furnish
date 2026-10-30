@@ -164,9 +164,9 @@ export function outcomeEventJsonSchema(): Record<string, unknown> {
   };
 }
 
-// --- Outcome event v1 (draft) --------------------------------------------
-// v1 is a draft kept beside v0, not yet the accepted format. It adds two
-// things to the same outcome rules:
+// --- Outcome event v1 -----------------------------------------------------
+// v1 is the format the Bureau and CounterAudit accept; v0 is kept for files
+// signed before it. v1 adds two things to the same outcome rules:
 //   - key_id: which signing key produced the signature, so a furnisher can
 //     rotate keys and old events stay attributable.
 //   - relation: an optional pointer to an earlier event, with an explicit
@@ -288,9 +288,9 @@ export function outcomeEventV1JsonSchema(): Record<string, unknown> {
   return {
     $schema: schema.$schema,
     $id: SCHEMA_URL_V1,
-    title: "Agent Bureau outcome event v1 (draft)",
+    title: "Agent Bureau outcome event v1",
     description:
-      "Draft v1 of an outcome event. Same outcome, amount and evidence rules as v0, plus a key_id naming the signing key and an optional relation (disputes, corrects, supersedes or withdraws) pointing at an earlier event_id. Not yet the accepted format. The signature is Ed25519 over the canonical form with the v1 signing context described in the agent-bureau-furnish README.",
+      "An outcome event a furnisher reports to The Agent Bureau, format v1. Same outcome, amount and evidence rules as v0, plus a key_id naming the signing key and an optional relation (disputes, corrects, supersedes or withdraws) pointing at an earlier event_id. The signature is Ed25519 over the canonical form with the v1 signing context described in the agent-bureau-furnish README.",
     ...Object.fromEntries(
       Object.entries(schema).filter(([key]) => key !== "$schema")
     ),
