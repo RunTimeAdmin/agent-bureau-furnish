@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -11,15 +11,18 @@ import {
   type UnsignedEvent,
   type UnsignedEventV1,
 } from "./event.js";
+import { apiBaseUrl, DEFAULT_API_URL, sealEvent } from "./seal.js";
 import {
   generateFurnisherKey,
   parsePrivateKey,
   parsePublicKey,
+  parseSignedEventV1,
   signEvent,
   signEventV1,
   verifyEvent,
   verifyEventV1,
 } from "./sign.js";
+import type { SignedEventV1 } from "./event.js";
 
 const USAGE = `furnish: sign and verify outcome events for The Agent Bureau
 
@@ -40,6 +43,14 @@ const USAGE = `furnish: sign and verify outcome events for The Agent Bureau
                  <signed.jsonl>
       Check the format and signature of every event in a signed file. With
       --furnisher, also require every event to carry that furnisher id.
+
+  furnish seal --out <sealed.jsonl> [--api-url <url>] <signed.jsonl>
+      Seal every signed event in your CounterAudit organization and write
+      the sealed lines the Bureau takes, {"packet_id", "event"} per line.
+      Reads the organization's ingest key from COUNTERAUDIT_INGEST_KEY.
+      Checks every line first and sends nothing if any fails; writes
+      nothing unless every event is sealed the way the Bureau takes it.
+      Sealing an event again returns the packet it already has.
 
   furnish schema [--out <file>]
       Write the JSON Schema for outcome events (default:
@@ -84,13 +95,12 @@ function v1Options(
   return { keyId };
 }
 
-// Furnisher-supplied text (bad column names, rejected values, zod messages) is
-// echoed to the operator's console. Strip control characters first so a crafted
-// file cannot write terminal escape sequences that hide failures or fake the
-// result line.
+// Furnisher-supplied text (bad column names, rejected values, zod messages) and a
+// server's answers are echoed to the operator's console. Strip control and format
+// characters first (terminal escapes, bidi overrides, line separators) so crafted
+// text cannot hide failures or fake the result line.
 export function safe(text: string): string {
-  // eslint-disable-next-line no-control-regex
-  return text.replace(/[\u0000-\u001f\u007f-\u009f]/g, " ");
+  return text.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
 }
 
 function readEvents(file: string, furnisherId: string, v1?: V1Options) {
@@ -275,6 +285,131 @@ export function verifyCommand(args: string[]) {
   if (invalid || !valid) process.exitCode = 1;
 }
 
+async function sealCommand(args: string[]) {
+  const { values, positionals } = parseArgs({
+    args,
+    allowPositionals: true,
+    options: {
+      out: { type: "string" },
+      "api-url": { type: "string" },
+    },
+  });
+  const [input] = positionals;
+  if (!values.out || !input) throw new UsageError("seal needs --out and a signed file");
+  // From the environment, not a flag, so the key stays out of shell history and process lists.
+  const apiKey = process.env.COUNTERAUDIT_INGEST_KEY?.trim();
+  if (!apiKey) {
+    throw new UsageError(
+      "Set COUNTERAUDIT_INGEST_KEY to an ingest key of your CounterAudit organization; nothing was sealed"
+    );
+  }
+  // Printable ASCII only. A key with a line break in it would otherwise be echoed whole in the
+  // HTTP library's error about the header.
+  if (!/^[\x21-\x7e]+$/.test(apiKey)) {
+    throw new UsageError("COUNTERAUDIT_INGEST_KEY holds characters an API key cannot have; nothing was sealed");
+  }
+  let apiUrl: string;
+  try {
+    apiUrl = apiBaseUrl(values["api-url"] ?? DEFAULT_API_URL);
+  } catch (error) {
+    throw new UsageError((error as Error).message);
+  }
+  const events: { line: number; event: SignedEventV1 }[] = [];
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  readFileSync(input, "utf8")
+    .split(/\r?\n/)
+    .forEach((text, index) => {
+      if (!text.trim()) return;
+      const fail = (reason: string) => problems.push(`${input}:${index + 1}: ${safe(reason)}`);
+      let item: unknown;
+      try {
+        item = JSON.parse(text);
+      } catch {
+        return fail("not valid JSON");
+      }
+      // CounterAudit takes only v1, and checks the signature against the signer it holds.
+      const parsed = parseSignedEventV1(item);
+      if (!parsed.ok) return fail(parsed.reason);
+      const key = `${parsed.event.furnisher_id}/${parsed.event.event_id}`;
+      if (seen.has(key)) return fail(`duplicate event ${key}`);
+      seen.add(key);
+      events.push({ line: index + 1, event: parsed.event });
+    });
+  if (problems.length) {
+    for (const problem of problems) console.error(problem);
+    console.error(`${problems.length} line(s) failed. Nothing was sealed.`);
+    process.exitCode = 1;
+    return;
+  }
+  if (!events.length) throw new UsageError(`${input} has no events`);
+
+  // Created before anything is sent, so a path that cannot be written stops the run first.
+  let fd: number;
+  try {
+    fd = openSync(values.out, "wx");
+  } catch (error) {
+    const code = (error as { code?: string }).code ?? "unknown error";
+    throw new Error(
+      code === "EEXIST"
+        ? `${values.out} already exists; nothing was sealed`
+        : `${values.out} cannot be created (${code}); nothing was sealed`
+    );
+  }
+  const discard = () => {
+    closeSync(fd);
+    unlinkSync(values.out!);
+  };
+
+  console.log(`Sealing ${events.length} event(s) at ${apiUrl}`);
+  const onWait = (seconds: number) =>
+    console.log(`CounterAudit is limiting requests; waiting ${seconds}s.`);
+  const sealed: string[] = [];
+  let created = 0;
+  let failed = 0;
+  for (const { line, event } of events) {
+    const result = await sealEvent(event, { apiUrl, apiKey, onWait });
+    if (result.ok) {
+      sealed.push(JSON.stringify({ packet_id: result.packetId, event }));
+      if (result.created) created += 1;
+      continue;
+    }
+    failed += 1;
+    console.error(`${input}:${line}: ${safe(result.reason)}`);
+    if (result.fatal) {
+      console.error("Stopped: the rest would fail the same way.");
+      break;
+    }
+  }
+  if (failed) {
+    discard();
+    console.error(
+      `${sealed.length} of ${events.length} event(s) sealed the way the Bureau takes them. Nothing was ` +
+        "written. Sealing an event again returns the packet it already has: fix what is wrong and run " +
+        "seal on the whole file again, but a packet sealed without an expiry or a public proof stays that way."
+    );
+    process.exitCode = 1;
+    return;
+  }
+  try {
+    writeFileSync(fd, sealed.join("\n") + "\n");
+    closeSync(fd);
+  } catch (error) {
+    try {
+      discard();
+    } catch {
+      // Already closed, or gone: nothing more to undo.
+    }
+    const code = (error as { code?: string }).code ?? "unknown error";
+    throw new Error(
+      `${values.out} could not be written (${code}). Every event is sealed; run seal again to write the lines.`
+    );
+  }
+  console.log(
+    `Sealed ${events.length} event(s) to ${values.out} (${created} new, ${events.length - created} already sealed).`
+  );
+}
+
 function schemaCommand(args: string[]) {
   const { values } = parseArgs({
     args,
@@ -288,16 +423,25 @@ function schemaCommand(args: string[]) {
   console.log(`Wrote ${out}`);
 }
 
-const commands: Record<string, (args: string[]) => void> = {
+const commands: Record<string, (args: string[]) => void | Promise<void>> = {
   keygen,
   check,
   sign: signCommand,
   verify: verifyCommand,
+  seal: sealCommand,
   schema: schemaCommand,
 };
 
-export function runCli(argv: string[]): void {
+/** Runs a command. Returns a promise for one that waits on the network (seal), else nothing. */
+export function runCli(argv: string[]): void | Promise<void> {
   const [command, ...rest] = argv;
+  const fail = (error: unknown) => {
+    const code = (error as { code?: string }).code ?? "";
+    const usage = error instanceof UsageError || code.startsWith("ERR_PARSE_ARGS");
+    console.error(error instanceof Error ? error.message : String(error));
+    if (usage) console.error(`\n${USAGE}`);
+    process.exitCode = 1;
+  };
   try {
     if (command === "--help" || command === "-h") {
       console.log(USAGE);
@@ -307,14 +451,11 @@ export function runCli(argv: string[]): void {
       const run =
         command && Object.hasOwn(commands, command) ? commands[command] : undefined;
       if (!run) throw new UsageError(command ? `Unknown command: ${command}` : "No command given");
-      run(rest);
+      const pending = run(rest);
+      if (pending) return pending.catch(fail);
     }
   } catch (error) {
-    const code = (error as { code?: string }).code ?? "";
-    const usage = error instanceof UsageError || code.startsWith("ERR_PARSE_ARGS");
-    console.error(error instanceof Error ? error.message : String(error));
-    if (usage) console.error(`\n${USAGE}`);
-    process.exitCode = 1;
+    fail(error);
   }
 }
 
