@@ -78,7 +78,13 @@ Each event is signed with Ed25519 over the bytes of:
 agent-bureau/outcome-event/v1\n<the event without "signature", as RFC 8785 canonical JSON>
 ```
 
-RFC 8785 means object keys sorted at every level and no whitespace. The fixed prefix stops a signature your key made for something else from being replayed as an event. Public keys and signatures are written as `ed25519:` followed by base64url without padding.
+RFC 8785 means object keys sorted at every level and no whitespace. The fixed prefix stops a signature your key made for something else from being replayed as an event. Public keys and signatures are written as `ed25519:` followed by base64url without padding, in its one canonical spelling. Keys that are small-order points are refused, since anyone could forge a signature under one.
+
+## Test vectors
+
+[`vectors/outcome-event-v1.json`](vectors/outcome-event-v1.json) holds the shared test vectors for v1: signed events with the result every implementation must reach (schema, signature, signed-event hash, and CounterAudit's answer), public keys to accept or refuse, CounterAudit's signer states (active and revoked), and one real CounterAudit proof. This tool, CounterAudit and the Bureau each run all of them; their copies are pinned by SHA-256, so an edited copy fails their tests. A copy does not update itself: after a change here, copy the file into both and update their pinned hash, or they keep testing the old cases.
+
+The file is built by [`test/vectors.ts`](test/vectors.ts) from fixed test keys whose seeds are published in it. Those keys are for testing only: never register them anywhere real. To add a case, change `test/vectors.ts`, run `npm run vectors`, and update the copies and their pinned hash in CounterAudit and the Bureau.
 
 CounterAudit, the Bureau's system of record for furnished events, accepts only this format: without `key_id` a key could not be rotated or revoked.
 
@@ -97,6 +103,7 @@ npm install      # also builds dist/
 npm test
 npm run typecheck
 npm run schema   # after changing src/event.ts (add -- --version 0 for v0); a test fails until you do
+npm run vectors  # after changing test/vectors.ts; a test fails until you do
 ```
 
 `zod` is pinned to an exact version on purpose: its JSON Schema output and date rules change between releases, and the furnisher and the Bureau must validate the same way.

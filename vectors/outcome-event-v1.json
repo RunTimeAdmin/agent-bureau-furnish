@@ -1,0 +1,769 @@
+{
+  "format": "agent-bureau/outcome-event-v1-vectors/1",
+  "about": "Shared test vectors for outcome event v1. agent-bureau-furnish, CounterAudit and The Agent Bureau each run every case and must reach the stated result. Built by test/vectors.ts in agent-bureau-furnish; copies elsewhere are pinned by SHA-256.",
+  "signing": {
+    "context": "agent-bureau/outcome-event/v1\n",
+    "canonical_json": "RFC 8785",
+    "signature": "ed25519: and the canonical base64url of the 64-byte Ed25519 signature over context + canonical JSON of the event without signature",
+    "signed_event_hash": "SHA-256 (hex) of the canonical JSON of the signed event"
+  },
+  "keys": {
+    "a": {
+      "public_key": "ed25519:jSmHqAXPdYzpd_g7p54vSNvj9uFWYq6Gg5vpFR98hnM",
+      "seed_hex": "e7708c1f558be75a23338746b1bfce3dbf7287e7268da0e94278cbd50a5a2cd0",
+      "note": "TEST ONLY. The seed is published so anyone can rebuild these vectors; never register this key anywhere real."
+    },
+    "a-old": {
+      "public_key": "ed25519:piC-eYXGv8BzltgIu_J3AP9-UQkDV1STHKt5AAaIyAM",
+      "seed_hex": "de3e77105e6f9c03327230625abbc24badcb09f1da5abd58248039522bd943fc",
+      "note": "TEST ONLY. The seed is published so anyone can rebuild these vectors; never register this key anywhere real."
+    },
+    "b": {
+      "public_key": "ed25519:sAKRF7Z0TO-RJ1zxox-7CHW3_v548-RjYAT3VeEDSHE",
+      "seed_hex": "2b4f5d0ed27fea73b2b391a66dcf3660a85052f0844348ea6385f4badc2233f7",
+      "note": "TEST ONLY. The seed is published so anyone can rebuild these vectors; never register this key anywhere real."
+    }
+  },
+  "public_keys": [
+    {
+      "id": "a",
+      "public_key": "ed25519:jSmHqAXPdYzpd_g7p54vSNvj9uFWYq6Gg5vpFR98hnM",
+      "expect": "valid"
+    },
+    {
+      "id": "small-order-0-sign-clear",
+      "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-0-sign-set",
+      "public_key": "ed25519:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIA",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-1-sign-clear",
+      "public_key": "ed25519:AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-1-sign-set",
+      "public_key": "ed25519:AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIA",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-2-sign-clear",
+      "public_key": "ed25519:JuiVj8KyJ7BFw_SJ8u-Y8NXfrAXTxjM5sTgCiG1T_AU",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-2-sign-set",
+      "public_key": "ed25519:JuiVj8KyJ7BFw_SJ8u-Y8NXfrAXTxjM5sTgCiG1T_IU",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-3-sign-clear",
+      "public_key": "ed25519:xxdqcD1N2E-6PAt2DRBnDyogU_osOczGTsf9d5KsA3o",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-3-sign-set",
+      "public_key": "ed25519:xxdqcD1N2E-6PAt2DRBnDyogU_osOczGTsf9d5KsA_o",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-4-sign-clear",
+      "public_key": "ed25519:7P_______________________________________38",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-4-sign-set",
+      "public_key": "ed25519:7P________________________________________8",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-5-sign-clear",
+      "public_key": "ed25519:7f_______________________________________38",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-5-sign-set",
+      "public_key": "ed25519:7f________________________________________8",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-6-sign-clear",
+      "public_key": "ed25519:7v_______________________________________38",
+      "expect": "invalid"
+    },
+    {
+      "id": "small-order-6-sign-set",
+      "public_key": "ed25519:7v________________________________________8",
+      "expect": "invalid"
+    },
+    {
+      "id": "non-canonical-spelling",
+      "public_key": "ed25519:jSmHqAXPdYzpd_g7p54vSNvj9uFWYq6Gg5vpFR98hnN",
+      "expect": "invalid"
+    },
+    {
+      "id": "too-short",
+      "public_key": "ed25519:jSmHqAXPdYzpd_g7p54vSNvj9uFWYq6Gg5vpFR98hn",
+      "expect": "invalid"
+    },
+    {
+      "id": "missing-prefix",
+      "public_key": "jSmHqAXPdYzpd_g7p54vSNvj9uFWYq6Gg5vpFR98hnM",
+      "expect": "invalid"
+    }
+  ],
+  "signers": [
+    {
+      "furnisher_id": "fur_vectors01",
+      "key_id": "vec-a-1",
+      "key": "a",
+      "status": "active"
+    },
+    {
+      "furnisher_id": "fur_vectors01",
+      "key_id": "vec-a-0",
+      "key": "a-old",
+      "status": "revoked"
+    }
+  ],
+  "events": [
+    {
+      "id": "paid-full",
+      "description": "paid, wallet subject, amount and evidence",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBQ"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "07706f5b06b13b122850fc444fdee459f6f53492a1567c97f4986e2014214b3a",
+        "counteraudit": "accepted"
+      }
+    },
+    {
+      "id": "delivered-minimal",
+      "description": "delivered, DID subject, nothing optional",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-delivered-1",
+        "subject_ref": {
+          "did": "did:sigvara:5042002:0xCc52Cd92963f8A86d04dB29a4810d1e01D193910"
+        },
+        "occurred_at": "2026-10-31T12:05:00Z",
+        "outcome": "delivered",
+        "signature": "ed25519:ILphYAsRxKHEYuyxhlJFhYTrsxOVG1HavJ44bY6qAQemLxEXL_8UtcTjLIWzDDWqxAnUibhLOE9XKzXdTPm2AQ"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "e0ec286efe1d5cad1d5502fb88a809af3bafe36052e7cf7db6797dcf7c1d670f",
+        "counteraudit": "accepted"
+      }
+    },
+    {
+      "id": "payment-failed-corrects",
+      "description": "payment_failed correcting an earlier event",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-failed-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "payment_failed",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "log_ref": "levy dunning 3-2"
+        },
+        "relation": {
+          "type": "corrects",
+          "target_event_id": "vec-paid-1"
+        },
+        "signature": "ed25519:3K8eZ9dMSST9rYVKSRF3T3dOAfkAdhutTk5mRaC82Jqa1sGkqU1CWQvFgAkWeero03y5aT3M9IN7XIceolB0Dw"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "aec2fdc9e17781cff5675ad6e0540fb4aae412e51ec58e6ebcca5c55e402cfd4",
+        "counteraudit": "accepted"
+      }
+    },
+    {
+      "id": "access-revoked-registry",
+      "description": "access_revoked, registry subject, packet evidence",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-revoked-access-1",
+        "subject_ref": {
+          "chain": "arc",
+          "registry": "erc8004",
+          "id": "42"
+        },
+        "occurred_at": "2026-10-31T12:10:00.250Z",
+        "outcome": "access_revoked",
+        "evidence": {
+          "counteraudit_packet": "6a311b56-bf03-43cd-86b2-9357f5685080"
+        },
+        "signature": "ed25519:_Gowac3CfqM1mCLeH34mzjrA_vdDyfHhDxGf7tCZME7QjjH_BT7irNu-QzsZnFzxLjWrW0cTapCUOdm4g5H8Bg"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "33ce64f5046443d6596e6f322cf7b6deaa663a3d47597054d6aedf4dce104a31",
+        "counteraudit": "accepted"
+      }
+    },
+    {
+      "id": "non-ascii-text",
+      "description": "non-ASCII, a quote and a backslash in a string",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-unicode-1",
+        "subject_ref": {
+          "wallet": "0x451567A35648445143768d3D6e9072A50BB2d85F"
+        },
+        "occurred_at": "2026-10-31T12:15:00Z",
+        "outcome": "delivered",
+        "evidence": {
+          "log_ref": "Lieferschein \"7\" C:\\Zürich ✓ 配達済み"
+        },
+        "signature": "ed25519:ukC2XOZbpqRdIoeO0yKt6-j1EtBqoSKELlDZ093Vdm9Ye0YqscJ6Rttm9rGVGEr386Qh4mMO09ToGqq0l4IuCQ"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "bba499ca57cf2478debb3faebaea9cb4d641ab8da0f969cd03c1e72fb90d0cf6",
+        "counteraudit": "accepted"
+      }
+    },
+    {
+      "id": "tampered-amount",
+      "description": "paid-full with its amount changed after signing",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "100.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBQ"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "invalid",
+        "signed_event_hash": "19c9e1f920f726cc9d8d698c3ce2e89dec0092cbb0a19a1c6732ee90b319e3a6",
+        "counteraudit": "outcome_signature_invalid"
+      }
+    },
+    {
+      "id": "wrong-key",
+      "description": "names key vec-a-1 but is signed with another key",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:eiEIZlmBaSRL1XZDCkLtpEICHpK-iLBr1yAjsV_0n2MAOxXyEUi2dSjj8-zUdRh5uNXSyrU1suah2S0L3FNIBg"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "invalid",
+        "signed_event_hash": "d47f44c7cbb97e888a9506768a19cd6d880a26895d1b800adc092b44bf144525",
+        "counteraudit": "outcome_signature_invalid"
+      }
+    },
+    {
+      "id": "v0-context",
+      "description": "signed over the v0 signing context",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:ujiZHrvuMgdlSd7aZybNP9Os9MSovTZ3iFmD3krOdARArDLWmgPbtbi9rsIa3wSBc44rZVNk2N0wV2gGbGZ3AA"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "invalid",
+        "signed_event_hash": "f406772d6597338c27d9824ca5008ba7f57d818475f94720e272d2cb12eca5b9",
+        "counteraudit": "outcome_signature_invalid"
+      }
+    },
+    {
+      "id": "non-canonical-signature",
+      "description": "the right signature bytes in a second base64url spelling",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBR"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "invalid",
+        "signed_event_hash": "0fa4505a6dca18d53c6232398318d3bc6f9853e1da5e3c2fecd7fe26215b757d",
+        "counteraudit": "outcome_signature_invalid"
+      }
+    },
+    {
+      "id": "revoked-key",
+      "description": "signed with key vec-a-0, which CounterAudit has revoked",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-0",
+        "event_id": "vec-revoked-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:xG0nNmUKzYpMdlCl-1TE9BaHs5tDzN5mpI3FQ6lBMWeZwlZX-7uNEvNKvQUDKOS3SI8ZO8lDEDbtvCq3SJVaDw"
+      },
+      "verify_with": "a-old",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "0d778ac508e0ce97ef545c8950ec6634f1c18e53d8a306b195ab9ed8bf69d463",
+        "counteraudit": "outcome_signer_unknown"
+      }
+    },
+    {
+      "id": "unregistered-key",
+      "description": "signed with key vec-b-1, which was never registered",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-b-1",
+        "event_id": "vec-unregistered-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:7OlWKWr6bF8tyl74kiNUmhQMX1p0hsL9L8_oUQOMl7fy3J7s49qRU2uq6lpsw1cgOOdWyxjaRmmKfSp7Dd0oCQ"
+      },
+      "verify_with": "b",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "48eb72fdb75351067a3112e211522335c1b2f0efe139e8e736579ccd8075325d",
+        "counteraudit": "outcome_signer_unknown"
+      }
+    },
+    {
+      "id": "unknown-field",
+      "description": "a field v1 does not define",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "note": "extra",
+        "signature": "ed25519:-OMKVq3bKp7nQwLgJVXTB7NzUrCW0cbU7JL4Ie-fCX6Pbgw5Q-rz1qQpVGQed5QSCBWoimaaVt-2XdXTWqHkBw"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "invalid",
+        "signature": null,
+        "signed_event_hash": null,
+        "counteraudit": "outcome_schema_invalid"
+      }
+    },
+    {
+      "id": "proto-key-after-signing",
+      "description": "a __proto__ key added after signing",
+      "event": {
+        "__proto__": {
+          "admin": true
+        },
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBQ"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "invalid",
+        "signature": null,
+        "signed_event_hash": null,
+        "counteraudit": "outcome_schema_invalid"
+      }
+    },
+    {
+      "id": "missing-key-id",
+      "description": "no key_id",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:yJlnw_zvPSrYCmIKJURYvH099Mce6Ya-daa8AAb0g_zHlSQqL2SCJ8VsfR0zHLUJ7T6pIZ6sj0Rdqft7bXgLCQ"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "invalid",
+        "signature": null,
+        "signed_event_hash": null,
+        "counteraudit": "outcome_schema_invalid"
+      }
+    },
+    {
+      "id": "self-relation",
+      "description": "a relation to its own event_id",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "relation": {
+          "type": "corrects",
+          "target_event_id": "vec-paid-1"
+        },
+        "signature": "ed25519:Ym1_-XCY2QMBoAuuOhz9d-xU6rUAyk1-J-hQ-8Aj6oAcAZxHJDp9Q5bEQ1zTdIwoL_AqaP7ajGBcE9vXSeEzAw"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "invalid",
+        "signature": null,
+        "signed_event_hash": null,
+        "counteraudit": "outcome_schema_invalid"
+      }
+    },
+    {
+      "id": "paid-without-amount",
+      "description": "paid with no amount",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:HpUPM9Z247kZQfIFHdr1f4JuBRorOwSD3BvUaypRLaeL1qP2cISU2UT2GaT2Z22NMhdAd9m3Qmn1rzDx-eOeBA"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "invalid",
+        "signature": null,
+        "signed_event_hash": null,
+        "counteraudit": "outcome_schema_invalid"
+      }
+    },
+    {
+      "id": "negative-without-evidence",
+      "description": "not_delivered with no evidence",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-not-delivered-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:20:00Z",
+        "outcome": "not_delivered",
+        "signature": "ed25519:ZJTTys3UYDvgyGAu44yHLVjXEDHIBTI-8kGd4P8tDQeKk0N5THyKc4ZKy9bEBK3TQPlNpLfsuio7bPkmeAV9Dg"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "invalid",
+        "signature": null,
+        "signed_event_hash": null,
+        "counteraudit": "outcome_schema_invalid"
+      }
+    },
+    {
+      "id": "non-utc-time",
+      "description": "occurred_at with an offset instead of Z",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "vec-paid-1",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T14:00:00+02:00",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:Nsj3zrGRimOsBEdvO6aHXUNWg0jCFUzXsTTyy0OBQH83n2KJWqcuYyjkCRIuUt4_7d1HQeQwPCo8t4HCivZCCw"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "invalid",
+        "signature": null,
+        "signed_event_hash": null,
+        "counteraudit": "outcome_schema_invalid"
+      }
+    }
+  ],
+  "proofs": [
+    {
+      "id": "counteraudit-production-2026-10-30",
+      "description": "Real CounterAudit output, captured from production on 2026-10-30: the public proof of a packet sealed in The Agent Bureau test organization from an event signed with a throwaway test key, and CounterAudit export JWKS. Public proofs are served without credentials; none of this is secret.",
+      "org_id": "71689063-29f4-4d83-89a7-1d8f7fbaaf87",
+      "packet_id": "6a311b56-bf03-43cd-86b2-9357f5685080",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_e2etest01",
+        "key_id": "e2e-2026-10",
+        "event_id": "e2e-20261030185449",
+        "subject_ref": {
+          "did": "did:sigvara:5042002:0xCc52Cd92963f8A86d04dB29a4810d1e01D193910"
+        },
+        "occurred_at": "2026-10-30T18:54:49Z",
+        "outcome": "delivered",
+        "signature": "ed25519:Z22CQAzJMFgeo7Lcfx_VOUkIXYRRZ9ICFUMEfEZrf3pauQTF21FrJGOwqWLkhb69xXUSO1S0DvDMh6JfO35EAQ"
+      },
+      "proof": {
+        "proof_type": "counteraudit.packet_proof",
+        "proof_version": 1,
+        "packet_id": "6a311b56-bf03-43cd-86b2-9357f5685080",
+        "org_id": "71689063-29f4-4d83-89a7-1d8f7fbaaf87",
+        "sequence": 0,
+        "entry_hash": "2eaff3236ebd1029f69fb3676a3dd01a3639d83b3b3464d908498027d9f0b85c",
+        "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "payload_hash": "e48f01a8652fd5b4f75a9430cb591e624c8390c847dfe8d9d187882443fec220",
+        "raw_event_hash": "03f35cc5010de574edec92f428af1039f8f2181c5e31ae4ef7e13e10a24e4200",
+        "connector_id": "agent-bureau-outcome-v1",
+        "created_at": "2026-10-30T18:55:04.529Z",
+        "agent_did_hash": null,
+        "agent_identity_verified": null,
+        "outcome_claim": {
+          "outcome": "delivered",
+          "asserted_by": "signature",
+          "event_id": "e2e-20261030185449",
+          "schema_version": "1",
+          "signer": {
+            "furnisher_id": "fur_e2etest01",
+            "key_id": "e2e-2026-10",
+            "public_key": "ed25519:r-00IsnzMCHpCSXoWFb0b9xdGHTnE8ko0Ahumjv-jjA"
+          },
+          "signed_event_hash": "03f35cc5010de574edec92f428af1039f8f2181c5e31ae4ef7e13e10a24e4200"
+        },
+        "public_proof": true,
+        "content_verified": true,
+        "covering_checkpoint": null,
+        "rfc3161_token": "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",
+        "issued_at": "2026-10-30T18:55:15.697Z",
+        "signature": {
+          "algorithm": "eddsa-jcs-2022",
+          "digest": "3ca6a95178676c8ae898c7870d6f2bbeb1961e0670039e3b28fb1178e0020e47",
+          "signature": "z4NZywpgYbnpxM64HEA6UwyNdG56RWQb1ibXFzQgo2QSeCk4r9UeBPW14WMwN9PpCbpQ6FdQdAB6Qb3xVckbwBKcX",
+          "key_id": "counteraudit-export-ed25519-1",
+          "verification_key_url": "/.well-known/counteraudit-export-jwk.json",
+          "verification_method": "eddsa_jcs_2022_jwks",
+          "signed_at": "2026-10-30T18:55:15.697Z",
+          "proof": {
+            "type": "DataIntegrityProof",
+            "cryptosuite": "eddsa-jcs-2022",
+            "created": "2026-10-30T18:55:15.697Z",
+            "verificationMethod": "/.well-known/counteraudit-export-jwk.json#counteraudit-export-ed25519-1",
+            "proofPurpose": "assertionMethod"
+          }
+        }
+      },
+      "jwks": {
+        "keys": [
+          {
+            "crv": "Ed25519",
+            "x": "Uj_vXhM3G0fVkjQ4nsxidX4RxDmyBj7rCLKP1-JREuk",
+            "kty": "OKP",
+            "kid": "counteraudit-export-ed25519-1",
+            "use": "sig",
+            "alg": "EdDSA"
+          }
+        ]
+      },
+      "expect": "every check passes"
+    }
+  ]
+}

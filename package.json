@@ -37,6 +37,7 @@
     "prepare": "npm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "vectors": "vitest run test/vectors.test.ts --update",
     "schema": "node dist/cli.js schema"
   },
   "dependencies": {
