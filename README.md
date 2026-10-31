@@ -47,6 +47,24 @@ furnish verify --public-key ed25519:... signed.jsonl
 
 See [`examples/events.csv`](examples/events.csv) for a starting point, and [`examples/events-v1.csv`](examples/events-v1.csv) for an event that corrects an earlier one.
 
+## Seal in your own CounterAudit organization
+
+If the Bureau has listed you as a furnisher that seals its own events, seal the signed file in your [CounterAudit](https://counteraudit.io) organization and send the Bureau the sealed file instead:
+
+```sh
+export COUNTERAUDIT_INGEST_KEY=...   # an ingest key of your organization
+furnish seal --out sealed.jsonl signed.jsonl
+```
+
+- Each event goes to `POST /v1/audit/ingest` with `public_proof: true`. CounterAudit checks the signature against the signer registered in your organization, seals the whole event and serves a proof anyone can check without a key. The Bureau fetches that proof itself.
+- `sealed.jsonl` has one line per event: `{"packet_id": "...", "event": {...}}`, the format the Bureau's sealed intake reads.
+- The key is read from `COUNTERAUDIT_INGEST_KEY`, not a flag, so it stays out of your shell history. `--api-url` points at another CounterAudit (default `https://api.counteraudit.io`; plain http only to localhost). Redirects are not followed, since the request carries the key.
+- Every line is checked before anything is sent, and nothing is sent if one fails. Then events are sealed one by one, and each receipt is checked for what the Bureau needs: the right connector, a public proof, the hash of this event, and an expiry no more than 24 months after sealing.
+- An event CounterAudit refuses (a bad signature, an unknown signer, an event id you already used for a different event) is reported and the rest carry on. A refused key, a spent quota, an unreachable server, or a packet sealed with no expiry or too late a one stops the run, so the rest of the file is not sealed the same way. When CounterAudit limits requests, `seal` waits as long as it asks. `sealed.jsonl` is written only when every event passes.
+- Sealing an event CounterAudit already holds returns the packet it has, so after fixing a refused event, run `seal` on the whole file again. That does not repair a packet: one sealed without a public proof, or before your retention policy was set, stays that way, and the Bureau refuses it. Its event needs a new `event_id`.
+
+Before the first run, set up once with CounterAudit: register your signing key in your organization as an outcome signer (the same public key and key id you gave the Bureau), and set a retention policy of 24 months or less. Set the policy first: `seal` stops at the first packet sealed without an expiry, but that one event's packet cannot be given one later. The Bureau's side is in [its cross-organization intake notes](https://github.com/RunTimeAdmin/the-agent-bureau/blob/master/docs/cross-org-intake.md).
+
 ## CSV columns
 
 | Column | Required | Notes |
