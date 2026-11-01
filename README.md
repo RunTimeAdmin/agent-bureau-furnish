@@ -2,7 +2,7 @@
 
 A small command-line tool for businesses that report agent outcomes to [The Agent Bureau](https://theagentbureau.xyz). It checks your outcome events, signs them with your key, and verifies signed files.
 
-The Bureau keeps one file per AI agent operator across Arc, Base, BNB Chain, Robinhood Chain and Solana, built from outcomes that businesses like yours report: who paid, who delivered, who got cut off. A signature proves a report came from you and hasn't been changed since. The Bureau is in a 90-day pilot; [brief us](https://theagentbureau.xyz/#contact) and choose "Partnership" to take part.
+The Bureau's aim is one file per AI agent operator across Arc, Base, BNB Chain, Robinhood Chain and Solana, built from outcomes that businesses like yours report: who paid, who delivered, who got cut off. A signature proves a report came from you and hasn't been changed since. For now the Bureau takes test data only: outside reports wait on a legal review of retention. To join the 90-day pilot, [brief us](https://theagentbureau.xyz/bureau#contact) and choose "Report agent outcomes".
 
 ## Install
 
@@ -112,7 +112,7 @@ v0 is the earlier format, with no `key_id` or `relation`, signed over the `agent
 
 ## No signature yet?
 
-During the pilot, the Bureau also accepts an unsigned CSV through the channel agreed when you join. Run `furnish check` on it first. Those events are marked "unsigned" on Bureau files, so signing is the better route.
+The Bureau plans to accept an unsigned CSV during the pilot, through the channel agreed when you join, and to mark those events "unsigned" on Bureau files. That route is not built yet, so sign your events for now. When it is, run `furnish check` on the CSV first; signing stays the better route.
 
 ## Develop
 
