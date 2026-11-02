@@ -2,12 +2,13 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { sign } from "node:crypto";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { canonicalize } from "../src/canonical.js";
 import { runCli, safe, verifyCommand } from "../src/cli.js";
 import { buildEvent, csvToEvents, parseCsv } from "../src/csv.js";
 import {
+  NEW_EVENT_ID,
   outcomeEventJsonSchema,
   outcomeEventV1JsonSchema,
   unsignedEventSchema,
@@ -19,6 +20,7 @@ import {
   generateFurnisherKey,
   parsePrivateKey,
   parsePublicKey,
+  parseSignedEventV1,
   signEvent,
   signEventV1,
   verifyEvent,
@@ -40,7 +42,7 @@ const EXAMPLE_CSV_V1 = fileURLToPath(
 const paid: UnsignedEvent = {
   schema_version: "0",
   furnisher_id: FURNISHER,
-  event_id: "inv-1001",
+  event_id: "4306771f-2a40-49f2-88e6-02d2abbe143f",
   subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
   occurred_at: "2026-10-20T14:03:00Z",
   outcome: "paid",
@@ -51,7 +53,7 @@ const paidV1: UnsignedEventV1 = {
   schema_version: "1",
   furnisher_id: FURNISHER,
   key_id: "key-2026-10",
-  event_id: "inv-1001",
+  event_id: "4306771f-2a40-49f2-88e6-02d2abbe143f",
   subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
   occurred_at: "2026-10-20T14:03:00Z",
   outcome: "paid",
@@ -184,7 +186,7 @@ describe("outcome event v1 (draft)", () => {
   });
 
   it("rejects a relation that points at the event's own id", () => {
-    expect(parseV1({ relation: { type: "supersedes", target_event_id: "inv-1001" } })).toBe(false);
+    expect(parseV1({ relation: { type: "supersedes", target_event_id: "4306771f-2a40-49f2-88e6-02d2abbe143f" } })).toBe(false);
   });
 
   it("round-trips a signed v1 event, with and without a relation", () => {
@@ -193,7 +195,7 @@ describe("outcome event v1 (draft)", () => {
     expect(verifyEventV1(signed, publicKey)).toEqual({ ok: true, event: signed });
 
     const corrected = signEventV1(
-      { ...paidV1, event_id: "inv-1002", relation: { type: "corrects", target_event_id: "inv-1001" } },
+      { ...paidV1, event_id: "df514f2a-38e9-4aea-9649-9fff1b54a8df", relation: { type: "corrects", target_event_id: "4306771f-2a40-49f2-88e6-02d2abbe143f" } },
       privateKey
     );
     expect(verifyEventV1(corrected, publicKey).ok).toBe(true);
@@ -232,8 +234,8 @@ describe("CSV import", () => {
   it("turns rows into valid events", () => {
     const csv = [
       header,
-      "inv-1,paid,2026-10-20T14:03:00Z,base,erc8004,1234,,12.50,USDC,base,",
-      `blk-7,policy_violation,2026-10-21T09:00:00Z,,,,0x${"b".repeat(40)},,,,"gateway log 2026-10-21, line 88"`,
+      "c262cc00-d51e-4107-aa12-ad7d5067d62d,paid,2026-10-20T14:03:00Z,base,erc8004,1234,,12.50,USDC,base,",
+      `26d78d85-9233-4ad9-b7a2-f75030f7e87b,policy_violation,2026-10-21T09:00:00Z,,,,0x${"b".repeat(40)},,,,"gateway log 2026-10-21, line 88"`,
       ",,,,,,,,,,",
     ].join("\n");
     const { events, errors } = csvToEvents(csv, FURNISHER);
@@ -249,10 +251,10 @@ describe("CSV import", () => {
   it("reports row problems by spreadsheet line", () => {
     const csv = [
       header,
-      `a1,paid,2026-10-20T14:03:00Z,base,erc8004,1,0x${"c".repeat(40)},5,USDC,base,`,
-      "a2,policy_violation,2026-10-20T14:03:00Z,base,erc8004,1,,,,,",
-      "a3,paid,2026-10-20T14:03:00Z,base,erc8004,1,,5,USDC,base,",
-      "a3,paid,2026-10-20T14:03:00Z,base,erc8004,1,,5,USDC,base,",
+      `eee30a0b-8abd-4d57-8b98-a109ba2ad160,paid,2026-10-20T14:03:00Z,base,erc8004,1,0x${"c".repeat(40)},5,USDC,base,`,
+      "0264e341-a4ae-44ef-bff4-0a8df81d56fe,policy_violation,2026-10-20T14:03:00Z,base,erc8004,1,,,,,",
+      "3ae7d171-8f64-4b2e-8f96-815b9284d845,paid,2026-10-20T14:03:00Z,base,erc8004,1,,5,USDC,base,",
+      "3ae7d171-8f64-4b2e-8f96-815b9284d845,paid,2026-10-20T14:03:00Z,base,erc8004,1,,5,USDC,base,",
     ].join("\n");
     const { events, errors } = csvToEvents(csv, FURNISHER);
     expect(events).toHaveLength(1);
@@ -350,7 +352,7 @@ describe("verify --furnisher binding", () => {
 describe("hardening", () => {
   it("does not let JSON input override the tool-set furnisher_id", () => {
     const result = buildEvent("fur_real01", {
-      event_id: "d-1",
+      event_id: "9ff126e6-f949-4158-b4be-0e44e9e54591",
       outcome: "delivered",
       occurred_at: "2026-10-20T14:03:00Z",
       subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
@@ -392,10 +394,56 @@ describe("hardening", () => {
   });
 });
 
+describe("a new event's id (the owner's rule, 2026-11-02)", () => {
+  const build = (event_id: string) =>
+    buildEvent(FURNISHER, { ...paidV1, event_id }, { keyId: "key-2026-10" });
+
+  it("is a random UUIDv4 in lowercase, and nothing else is signed", () => {
+    expect("event" in build("4306771f-2a40-49f2-88e6-02d2abbe143f")).toBe(true);
+    for (const id of [
+      "inv-1001",
+      "4306771F-2A40-49F2-88E6-02D2ABBE143F",
+      "4306771f-2a40-19f2-88e6-02d2abbe143f",
+      "4306771f-2a40-49f2-c8e6-02d2abbe143f",
+      "4306771f2a4049f288e602d2abbe143f",
+    ]) {
+      const built = build(id);
+      expect("error" in built && built.error).toContain("must be a random UUIDv4 in lowercase");
+    }
+  });
+
+  it("still verifies an event signed before the rule, and lets a relation point at one", () => {
+    const { privateKey } = generateKeyPairSync("ed25519");
+    const legacy = signEventV1({ ...paidV1, event_id: "inv-0999" }, privateKey);
+    expect(parseSignedEventV1(legacy).ok).toBe(true);
+    const relating = build("df514f2a-38e9-4aea-9649-9fff1b54a8df");
+    expect("event" in relating).toBe(true);
+    expect(
+      "event" in
+        buildEvent(
+          FURNISHER,
+          { ...paidV1, event_id: "df514f2a-38e9-4aea-9649-9fff1b54a8df", relation: { type: "corrects", target_event_id: "inv-0999" } },
+          { keyId: "key-2026-10" }
+        )
+    ).toBe(true);
+  });
+
+  it("furnish ids prints fresh ones, as many as asked", () => {
+    const out: string[] = [];
+    const spy = vi.spyOn(console, "log").mockImplementation((...a) => out.push(a.join(" ")));
+    runCli(["ids", "--count", "3"]);
+    spy.mockRestore();
+    const ids = out.join("\n").split("\n");
+    expect(ids).toHaveLength(3);
+    expect(new Set(ids).size).toBe(3);
+    for (const id of ids) expect(id).toMatch(NEW_EVENT_ID);
+  });
+});
+
 describe("JSON signing input (F-05)", () => {
   it("rejects a repeated event_id in a JSON batch, as CSV does", () => {
     const event = {
-      event_id: "dup-1",
+      event_id: "34cb0084-290c-4ed5-95d3-887eabe98dde",
       outcome: "delivered",
       occurred_at: "2026-10-20T14:03:00Z",
       subject_ref: { chain: "base", registry: "erc8004", id: "1234" },
@@ -411,7 +459,7 @@ describe("JSON signing input (F-05)", () => {
     process.exitCode = 0;
     runCli(["check", "--key-id", "k1", "--furnisher", "fur_acme01", file]);
     expect(process.exitCode).toBe(1);
-    expect(errors.join("\n")).toContain("event_id dup-1 appears more than once");
+    expect(errors.join("\n")).toContain("event_id 34cb0084-290c-4ed5-95d3-887eabe98dde appears more than once");
     errSpy.mockRestore();
     logSpy.mockRestore();
     process.exitCode = 0;
@@ -427,8 +475,8 @@ describe("CSV import, v1 columns", () => {
   it("builds a relation from both columns and leaves it out when both are empty", () => {
     const csv = [
       header,
-      `d-1,delivered,2026-10-20T14:03:00Z,${wallet},,`,
-      `d-2,disputed,2026-10-21T14:03:00Z,${wallet},disputes,d-1`,
+      `9ff126e6-f949-4158-b4be-0e44e9e54591,delivered,2026-10-20T14:03:00Z,${wallet},,`,
+      `b374b2d4-0b5b-4176-8a90-720a08dd4281,disputed,2026-10-21T14:03:00Z,${wallet},disputes,9ff126e6-f949-4158-b4be-0e44e9e54591`,
     ].join("\n");
     const { events, errors } = csvToEvents(csv, FURNISHER, v1);
     expect(errors).toEqual([]);
@@ -436,17 +484,17 @@ describe("CSV import, v1 columns", () => {
     expect(events[0]).not.toHaveProperty("relation");
     expect(events[1]).toMatchObject({
       key_id: "key-2026-10",
-      relation: { type: "disputes", target_event_id: "d-1" },
+      relation: { type: "disputes", target_event_id: "9ff126e6-f949-4158-b4be-0e44e9e54591" },
     });
   });
 
   it("needs both relation columns or neither, a known type and no self-reference", () => {
     const csv = [
       header,
-      `d-1,delivered,2026-10-20T14:03:00Z,${wallet},corrects,`,
-      `d-2,delivered,2026-10-20T14:03:00Z,${wallet},,d-0`,
-      `d-3,delivered,2026-10-20T14:03:00Z,${wallet},replaces,d-0`,
-      `d-4,delivered,2026-10-20T14:03:00Z,${wallet},corrects,d-4`,
+      `9ff126e6-f949-4158-b4be-0e44e9e54591,delivered,2026-10-20T14:03:00Z,${wallet},corrects,`,
+      `b374b2d4-0b5b-4176-8a90-720a08dd4281,delivered,2026-10-20T14:03:00Z,${wallet},,d-0`,
+      `26d78d85-9233-4ad9-b7a2-f75030f7e87b,delivered,2026-10-20T14:03:00Z,${wallet},replaces,d-0`,
+      `9d9a7544-dd51-4d65-a70a-d2f1b04c56e8,delivered,2026-10-20T14:03:00Z,${wallet},corrects,9d9a7544-dd51-4d65-a70a-d2f1b04c56e8`,
     ].join("\n");
     const { events, errors } = csvToEvents(csv, FURNISHER, v1);
     expect(events).toHaveLength(0);
@@ -459,7 +507,7 @@ describe("CSV import, v1 columns", () => {
   });
 
   it("refuses v1-only columns under v0 instead of dropping them", () => {
-    const csv = [header, `d-1,delivered,2026-10-20T14:03:00Z,${wallet},,`].join("\n");
+    const csv = [header, `9ff126e6-f949-4158-b4be-0e44e9e54591,delivered,2026-10-20T14:03:00Z,${wallet},,`].join("\n");
     expect(csvToEvents(csv, FURNISHER)).toEqual({
       events: [],
       errors: [
@@ -475,7 +523,7 @@ describe("CSV import, v1 columns", () => {
   it("refuses a key_id column under either version", () => {
     const csv = [
       "event_id,outcome,occurred_at,subject_wallet,key_id",
-      `d-1,delivered,2026-10-20T14:03:00Z,${wallet},key-a`,
+      `9ff126e6-f949-4158-b4be-0e44e9e54591,delivered,2026-10-20T14:03:00Z,${wallet},key-a`,
     ].join("\n");
     for (const options of [undefined, v1]) {
       expect(csvToEvents(csv, FURNISHER, options).errors).toEqual([
@@ -533,8 +581,8 @@ describe("sign, check and verify with --version", () => {
     );
     expect(events[0]).not.toHaveProperty("relation");
     expect(events[3]).toMatchObject({
-      event_id: "inv-1001-c1",
-      relation: { type: "corrects", target_event_id: "inv-1001" },
+      event_id: "701acdb1-2db0-41d5-9ef7-bba70a83b0c9",
+      relation: { type: "corrects", target_event_id: "4306771f-2a40-49f2-88e6-02d2abbe143f" },
     });
     for (const event of events) {
       expect(verifyEventV1(event, parsePublicKey(publicKey)).ok).toBe(true);
@@ -562,11 +610,11 @@ describe("sign, check and verify with --version", () => {
       json,
       JSON.stringify([
         {
-          event_id: "d-2",
+          event_id: "b374b2d4-0b5b-4176-8a90-720a08dd4281",
           outcome: "disputed",
           occurred_at: "2026-10-21T14:03:00Z",
           subject_ref: { did: "did:countersig:agent-9" },
-          relation: { type: "disputes", target_event_id: "d-1" },
+          relation: { type: "disputes", target_event_id: "9ff126e6-f949-4158-b4be-0e44e9e54591" },
         },
       ])
     );

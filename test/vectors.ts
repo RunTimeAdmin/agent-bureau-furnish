@@ -73,11 +73,13 @@ function respell(text: string, length: number): string {
   return other;
 }
 
+// Every new event's id is a random UUIDv4 (the owner's rule, 2026-11-02). These are fixed so the
+// file is the same on every build.
 const paid: Json = {
   schema_version: "1",
   furnisher_id: FURNISHER,
   key_id: "vec-a-1",
-  event_id: "vec-paid-1",
+  event_id: "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
   subject_ref: { wallet: "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77" },
   occurred_at: "2026-10-31T12:00:00Z",
   outcome: "paid",
@@ -100,6 +102,7 @@ type Case = {
     counteraudit:
       | "accepted"
       | "outcome_schema_invalid"
+      | "outcome_event_id_invalid"
       | "outcome_signer_unknown"
       | "outcome_signature_invalid";
   };
@@ -155,8 +158,11 @@ function cases(): Case[] {
   const signedPaid = signWith(paid, A);
   const { key_id: _keyId, ...noKeyId } = paid;
   const { amount: _amount, ...noAmount } = paid;
-  const revoked = signWith({ ...paid, key_id: "vec-a-0", event_id: "vec-revoked-1" }, A_OLD);
-  const unregistered = signWith({ ...paid, key_id: "vec-b-1", event_id: "vec-unregistered-1" }, B);
+  const revoked = signWith({ ...paid, key_id: "vec-a-0", event_id: "3ab86ee0-ae75-4429-83ca-00c2b7eea963" }, A_OLD);
+  const unregistered = signWith({ ...paid, key_id: "vec-b-1", event_id: "e55514ba-addc-4774-b21c-568a58060290" }, B);
+  // An id of the kind furnishers used before the rule: the schema still takes it, so an event signed
+  // then verifies, but CounterAudit seals no new event with one.
+  const oldId = signWith({ ...paid, event_id: "inv-1001" }, A);
   // A key the signature does not cover, added after signing. JSON.parse keeps
   // "__proto__" as an own key, which schema libraries may silently drop.
   const withProto = JSON.parse(
@@ -168,7 +174,7 @@ function cases(): Case[] {
       schema_version: "1",
       furnisher_id: FURNISHER,
       key_id: "vec-a-1",
-      event_id: "vec-delivered-1",
+      event_id: "5d688340-64dd-4227-8038-50241eb9350f",
       subject_ref: {
         did: "did:sigvara:5042002:0xCc52Cd92963f8A86d04dB29a4810d1e01D193910",
       },
@@ -177,16 +183,16 @@ function cases(): Case[] {
     }),
     valid("payment-failed-corrects", "payment_failed correcting an earlier event", {
       ...paid,
-      event_id: "vec-failed-1",
+      event_id: "4f3e372e-ea77-4026-b7fc-af86724a33de",
       outcome: "payment_failed",
       evidence: { log_ref: "levy dunning 3-2" },
-      relation: { type: "corrects", target_event_id: "vec-paid-1" },
+      relation: { type: "corrects", target_event_id: "5655ff67-86dd-4b6a-a307-3cccb10f40d4" },
     }),
     valid("access-revoked-registry", "access_revoked, registry subject, packet evidence", {
       schema_version: "1",
       furnisher_id: FURNISHER,
       key_id: "vec-a-1",
-      event_id: "vec-revoked-access-1",
+      event_id: "6bed6e4d-eeb9-404c-9e3a-43fe855a3f27",
       subject_ref: { chain: "arc", registry: "erc8004", id: "42" },
       occurred_at: "2026-10-31T12:10:00.250Z",
       outcome: "access_revoked",
@@ -196,7 +202,7 @@ function cases(): Case[] {
       schema_version: "1",
       furnisher_id: FURNISHER,
       key_id: "vec-a-1",
-      event_id: "vec-unicode-1",
+      event_id: "86317324-dea4-4ac2-a504-09568affe46c",
       subject_ref: { wallet: "0x451567A35648445143768d3D6e9072A50BB2d85F" },
       occurred_at: "2026-10-31T12:15:00Z",
       outcome: "delivered",
@@ -238,19 +244,31 @@ function cases(): Case[] {
         counteraudit: "outcome_signer_unknown",
       },
     },
+    {
+      id: "event-id-not-a-uuid",
+      description: "an event_id that is not a random UUIDv4: it verifies, and CounterAudit seals no new event with it",
+      event: oldId,
+      verify_with: "a",
+      expect: {
+        schema: "valid",
+        signature: "valid",
+        signed_event_hash: hash(oldId),
+        counteraudit: "outcome_event_id_invalid",
+      },
+    },
     badSchema("unknown-field", "a field v1 does not define", signWith({ ...paid, note: "extra" }, A)),
     badSchema("proto-key-after-signing", "a __proto__ key added after signing", withProto),
     badSchema("missing-key-id", "no key_id", signWith(noKeyId, A)),
     badSchema("self-relation", "a relation to its own event_id", signWith({
       ...paid,
-      relation: { type: "corrects", target_event_id: "vec-paid-1" },
+      relation: { type: "corrects", target_event_id: "5655ff67-86dd-4b6a-a307-3cccb10f40d4" },
     }, A)),
     badSchema("paid-without-amount", "paid with no amount", signWith(noAmount, A)),
     badSchema("negative-without-evidence", "not_delivered with no evidence", signWith({
       schema_version: "1",
       furnisher_id: FURNISHER,
       key_id: "vec-a-1",
-      event_id: "vec-not-delivered-1",
+      event_id: "0cc37c42-e25d-4921-b1d4-7c3f25a0b6ec",
       subject_ref: { wallet: "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77" },
       occurred_at: "2026-10-31T12:20:00Z",
       outcome: "not_delivered",

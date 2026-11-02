@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { randomUUID } from "node:crypto";
 import { closeSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -29,6 +30,11 @@ const USAGE = `furnish: sign and verify outcome events for The Agent Bureau
   furnish keygen <private-key-file>
       Create an Ed25519 signing key and print the public key to register
       with the Bureau. Never share the private key file.
+
+  furnish ids [--count <n>]
+      Print fresh event_ids, one per line (default one). Every new event's
+      event_id is a random UUIDv4: put one in each new row, and keep the
+      pairing with your own reference in your own records.
 
   furnish check --furnisher <fur_id> --key-id <key_id>
                 <events.csv|events.json>
@@ -163,6 +169,15 @@ function keygen(args: string[]) {
   }
   console.log(`Private key written to ${file}. Keep it private.`);
   console.log(`Public key (send this to the Bureau): ${publicKey}`);
+}
+
+function ids(args: string[]) {
+  const { values } = parseArgs({ args, options: { count: { type: "string" } } });
+  const count = values.count === undefined ? 1 : Number(values.count);
+  if (!Number.isInteger(count) || count < 1 || count > 10000) {
+    throw new UsageError("--count must be a whole number from 1 to 10000");
+  }
+  console.log(Array.from({ length: count }, () => randomUUID()).join("\n"));
 }
 
 function check(args: string[]) {
@@ -425,6 +440,7 @@ function schemaCommand(args: string[]) {
 
 const commands: Record<string, (args: string[]) => void | Promise<void>> = {
   keygen,
+  ids,
   check,
   sign: signCommand,
   verify: verifyCommand,

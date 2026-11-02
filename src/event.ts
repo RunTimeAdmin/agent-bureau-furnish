@@ -188,6 +188,12 @@ export const RELATION_TYPES = [
 
 const eventId = z.string().regex(/^[A-Za-z0-9._:-]{1,128}$/);
 
+// What a new event's own id must be: a random UUIDv4, in lowercase. The Bureau keeps an event's id
+// after the outcome itself expires, so it must say nothing about the subject or the furnisher's own
+// records (the owner's rule, 2026-11-02). The schema above still takes the older forms, so an event
+// signed before the rule verifies and a relation can point at one; signing checks this as well.
+export const NEW_EVENT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
 // How one event points at an earlier one. target_event_id names the event;
 // confirming the target exists, is in the same furnisher/subject scope and
 // forms no cycle needs the whole event history, so it is the receiver's job,
