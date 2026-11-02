@@ -1,8 +1,8 @@
 # agent-bureau-furnish
 
-A small command-line tool for businesses that report agent outcomes to [The Agent Bureau](https://theagentbureau.xyz). It checks your outcome events, signs them with your key, and verifies signed files.
+A small command-line tool for businesses that report agent outcomes to [The Agent Bureau](https://theagentbureau.xyz). It gives new events random ids, checks and signs them, verifies signed files, and can seal them in your CounterAudit organization.
 
-The Bureau's aim is one file per AI agent operator across Arc, Base, BNB Chain, Robinhood Chain and Solana, built from outcomes that businesses like yours report: who paid, who delivered, who got cut off. A signature proves a report came from you and hasn't been changed since. For now the Bureau takes test data only: outside reports wait on a legal review of retention. To join the 90-day pilot, [brief us](https://theagentbureau.xyz/bureau#contact) and choose "Report agent outcomes".
+The Bureau's aim is one file per AI agent operator across Arc, Base, BNB Chain, Robinhood Chain and Solana, built from outcomes that businesses like yours report: who paid, who delivered, who got cut off. A signature proves a report came from you and hasn't been changed since. For now the Bureau takes test data only: outside reports wait on a legal review of retention and on independent reviewers. To join the 90-day pilot, [brief us](https://theagentbureau.xyz/bureau#contact) and choose "Report agent outcomes".
 
 ## Install
 
@@ -64,8 +64,8 @@ furnish seal --out sealed.jsonl signed.jsonl
 - `sealed.jsonl` has one line per event: `{"packet_id": "...", "event": {...}}`, the format the Bureau's sealed intake reads.
 - The key is read from `COUNTERAUDIT_INGEST_KEY`, not a flag, so it stays out of your shell history. `--api-url` points at another CounterAudit (default `https://api.counteraudit.io`; plain http only to localhost). Redirects are not followed, since the request carries the key.
 - Every line is checked before anything is sent, and nothing is sent if one fails. Then events are sealed one by one, and each receipt is checked for what the Bureau needs: the right connector, a public proof, the hash of this event, and an expiry no more than 24 months after sealing.
-- An event CounterAudit refuses (a bad signature, an unknown signer, an event id you already used for a different event) is reported and the rest carry on. A refused key, a spent quota, an unreachable server, or a packet sealed with no expiry or too late a one stops the run, so the rest of the file is not sealed the same way. When CounterAudit limits requests, `seal` waits as long as it asks. `sealed.jsonl` is written only when every event passes.
-- Sealing an event CounterAudit already holds returns the packet it has, so after fixing a refused event, run `seal` on the whole file again. That does not repair a packet: one sealed without a public proof, or before your retention policy was set, stays that way, and the Bureau refuses it. Its event needs a new `event_id`.
+- An event CounterAudit refuses (a bad signature, an unknown signer, an event_id that is not a random UUIDv4, an event id you already used for a different event) is reported and the rest carry on. A refused key, a spent quota, an unreachable server, or a packet sealed with no expiry or too late a one stops the run, so the rest of the file is not sealed the same way. When CounterAudit limits requests, `seal` waits as long as it asks. `sealed.jsonl` is written only when every event passes.
+- Sealing an event CounterAudit already holds returns the packet it has (except an event whose id is not a UUIDv4, which CounterAudit now refuses even if it sealed it before), so after fixing a refused event, run `seal` on the whole file again. That does not repair a packet: one sealed without a public proof, or before your retention policy was set, stays that way, and the Bureau refuses it. Its event needs a new `event_id`.
 
 Before the first run, set up once with CounterAudit: register your signing key in your organization as an outcome signer (the same public key and key id you gave the Bureau), and set a retention policy of 24 months or less. Set the policy first: `seal` stops at the first packet sealed without an expiry, but that one event's packet cannot be given one later. The Bureau's side is in [its cross-organization intake notes](https://github.com/RunTimeAdmin/the-agent-bureau/blob/master/docs/cross-org-intake.md).
 
@@ -78,7 +78,7 @@ Before the first run, set up once with CounterAudit: register your signing key i
 | `occurred_at` | yes | UTC with seconds, e.g. `2026-10-20T14:03:00Z` |
 | `subject_chain`, `subject_registry`, `subject_id` | one subject | Chain is `arc`, `base`, `bnb`, `robinhood` or `solana`; registry is e.g. `erc8004` |
 | `subject_wallet` | one subject | EVM or Solana address |
-| `subject_did` | one subject | e.g. `did:countersig:...` |
+| `subject_did` | one subject | e.g. `did:sigvara:5042002:0x...` for a Sigvara agent (files then carry its Sigvara standing) or `did:countersig:...` |
 | `amount_value`, `amount_asset`, `amount_chain` | for `paid`, `refunded`, `payment_failed` | Value as a decimal string, e.g. `12.50` |
 | `evidence_tx_hash`, `evidence_counteraudit_packet`, `evidence_log_ref` | at least one for `payment_failed`, `not_delivered`, `access_revoked`, `policy_violation` | A log reference is anything that lets you find the record again, kept for 24 months |
 | `relation_type`, `relation_target_event_id` | optional; fill both or neither | Points this event at an earlier `event_id` of yours. Type is `disputes`, `corrects`, `supersedes` or `withdraws`. |
@@ -87,7 +87,7 @@ Fill exactly one subject per row. Unknown columns are rejected, so a typo can't 
 
 ## Format and signature
 
-The full rules are in [`src/event.ts`](src/event.ts), and the same rules as JSON Schema are in [`schema/outcome-event-v1.json`](schema/outcome-event-v1.json) (`npm run schema` regenerates it).
+The full rules are in [`src/event.ts`](src/event.ts), and the same rules as JSON Schema are in [`schema/outcome-event-v1.json`](schema/outcome-event-v1.json) (`npm run schema` regenerates it). The schema still accepts older id forms so earlier events verify; `check`, `sign` and CounterAudit also require a UUIDv4 for a new event.
 
 An event carries two fields that let it be checked and amended later:
 
