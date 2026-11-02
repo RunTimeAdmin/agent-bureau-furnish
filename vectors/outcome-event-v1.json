@@ -138,7 +138,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -153,13 +153,13 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBQ"
+        "signature": "ed25519:uN2LJdZqUZeafF4g92r2QMd5t-_g7jejL0Otu80ZuTa0LF7vFWJhRKTDyEnUERblg7tU0gYwapandjHMTjsgBw"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "valid",
-        "signed_event_hash": "07706f5b06b13b122850fc444fdee459f6f53492a1567c97f4986e2014214b3a",
+        "signed_event_hash": "eadde176e4604dc80ee20bd0b052814f6e62d8c7c234735dd1e8981310fb862e",
         "counteraudit": "accepted"
       }
     },
@@ -170,19 +170,19 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-delivered-1",
+        "event_id": "5d688340-64dd-4227-8038-50241eb9350f",
         "subject_ref": {
           "did": "did:sigvara:5042002:0xCc52Cd92963f8A86d04dB29a4810d1e01D193910"
         },
         "occurred_at": "2026-10-31T12:05:00Z",
         "outcome": "delivered",
-        "signature": "ed25519:ILphYAsRxKHEYuyxhlJFhYTrsxOVG1HavJ44bY6qAQemLxEXL_8UtcTjLIWzDDWqxAnUibhLOE9XKzXdTPm2AQ"
+        "signature": "ed25519:oUOWoLIs_y95V1saiSSfB6fO44vYLCgJNgdw3zZPjZLrrHV6f1nb3zOqp29VKk9HxqCfU_esyP0oRV-gcxQlDg"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "valid",
-        "signed_event_hash": "e0ec286efe1d5cad1d5502fb88a809af3bafe36052e7cf7db6797dcf7c1d670f",
+        "signed_event_hash": "cc4709adc005515ba95fc4573f0ea86058a61074dee36fbfa798324a549675ff",
         "counteraudit": "accepted"
       }
     },
@@ -193,7 +193,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-failed-1",
+        "event_id": "4f3e372e-ea77-4026-b7fc-af86724a33de",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -209,15 +209,15 @@
         },
         "relation": {
           "type": "corrects",
-          "target_event_id": "vec-paid-1"
+          "target_event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4"
         },
-        "signature": "ed25519:3K8eZ9dMSST9rYVKSRF3T3dOAfkAdhutTk5mRaC82Jqa1sGkqU1CWQvFgAkWeero03y5aT3M9IN7XIceolB0Dw"
+        "signature": "ed25519:Qj8K_djZnzZPN1y6TWbpSxe7NJuAKYzMeNJdO4pu2iR8lXbUs-7ODrwjs63NCtUa3lK78zksBQAldrhrgt-WBg"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "valid",
-        "signed_event_hash": "aec2fdc9e17781cff5675ad6e0540fb4aae412e51ec58e6ebcca5c55e402cfd4",
+        "signed_event_hash": "a848b20c6549b37bd481a26a67827f91e22a0b450c207a43cd3f5b307c82bbf4",
         "counteraudit": "accepted"
       }
     },
@@ -228,7 +228,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-revoked-access-1",
+        "event_id": "6bed6e4d-eeb9-404c-9e3a-43fe855a3f27",
         "subject_ref": {
           "chain": "arc",
           "registry": "erc8004",
@@ -239,13 +239,13 @@
         "evidence": {
           "counteraudit_packet": "6a311b56-bf03-43cd-86b2-9357f5685080"
         },
-        "signature": "ed25519:_Gowac3CfqM1mCLeH34mzjrA_vdDyfHhDxGf7tCZME7QjjH_BT7irNu-QzsZnFzxLjWrW0cTapCUOdm4g5H8Bg"
+        "signature": "ed25519:mE1QieXz7jqPdVGsfu26HslmKfT6CQu4r2f6KwO1FeJeOJ_hffdV22GV3at0qKtdFIF5FM-tqDTe3Qy5ar8_AA"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "valid",
-        "signed_event_hash": "33ce64f5046443d6596e6f322cf7b6deaa663a3d47597054d6aedf4dce104a31",
+        "signed_event_hash": "708b66ae940e0bd7d2e4363f4a005690932dc2941e9981329a1127ee0c0f0ba1",
         "counteraudit": "accepted"
       }
     },
@@ -256,7 +256,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-unicode-1",
+        "event_id": "86317324-dea4-4ac2-a504-09568affe46c",
         "subject_ref": {
           "wallet": "0x451567A35648445143768d3D6e9072A50BB2d85F"
         },
@@ -265,13 +265,13 @@
         "evidence": {
           "log_ref": "Lieferschein \"7\" C:\\Zürich ✓ 配達済み"
         },
-        "signature": "ed25519:ukC2XOZbpqRdIoeO0yKt6-j1EtBqoSKELlDZ093Vdm9Ye0YqscJ6Rttm9rGVGEr386Qh4mMO09ToGqq0l4IuCQ"
+        "signature": "ed25519:4-IMzqUkzhPg855hnomxXcGnU8sRmOYCfpDL_fv744LurCXdp_ycKjagCr3HZYip5h27livh2KhujASrQh4rBA"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "valid",
-        "signed_event_hash": "bba499ca57cf2478debb3faebaea9cb4d641ab8da0f969cd03c1e72fb90d0cf6",
+        "signed_event_hash": "6aecc8bc591f6bae374e63b77a624a1cefdd3f58e8e31820707b12c2b83eaec1",
         "counteraudit": "accepted"
       }
     },
@@ -282,7 +282,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -297,13 +297,13 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBQ"
+        "signature": "ed25519:uN2LJdZqUZeafF4g92r2QMd5t-_g7jejL0Otu80ZuTa0LF7vFWJhRKTDyEnUERblg7tU0gYwapandjHMTjsgBw"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "invalid",
-        "signed_event_hash": "19c9e1f920f726cc9d8d698c3ce2e89dec0092cbb0a19a1c6732ee90b319e3a6",
+        "signed_event_hash": "ef6021f2e48c8227f7dfb7c6a54f6b495b7b0502ae08e240064febfb144963be",
         "counteraudit": "outcome_signature_invalid"
       }
     },
@@ -314,7 +314,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -329,13 +329,13 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:eiEIZlmBaSRL1XZDCkLtpEICHpK-iLBr1yAjsV_0n2MAOxXyEUi2dSjj8-zUdRh5uNXSyrU1suah2S0L3FNIBg"
+        "signature": "ed25519:ededsmYNTH9xo5QUEugWBDxB6CM6B98KAf28OqqNCYisZmqdyFNLWgWUKwfCSC6sNIX2XwRvtG351YadzxiVDQ"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "invalid",
-        "signed_event_hash": "d47f44c7cbb97e888a9506768a19cd6d880a26895d1b800adc092b44bf144525",
+        "signed_event_hash": "abd043b86456c6ece60662ff7eefd793d5a68af40101b0e74bcf1f621c22a831",
         "counteraudit": "outcome_signature_invalid"
       }
     },
@@ -346,7 +346,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -361,13 +361,13 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:ujiZHrvuMgdlSd7aZybNP9Os9MSovTZ3iFmD3krOdARArDLWmgPbtbi9rsIa3wSBc44rZVNk2N0wV2gGbGZ3AA"
+        "signature": "ed25519:xuaYlXk55ORzmublvkIoWGtEwdS5TEmvg6MFwY0cLLksUYMOMjqsJ4lmJurJz1o9QtpJ4DXBu8tFyF-TcxSQAQ"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "invalid",
-        "signed_event_hash": "f406772d6597338c27d9824ca5008ba7f57d818475f94720e272d2cb12eca5b9",
+        "signed_event_hash": "55915666fe187221ff341d3ecc2cab6ebe3d7ec5d6db3d09925cc6ddf0e37f7e",
         "counteraudit": "outcome_signature_invalid"
       }
     },
@@ -378,7 +378,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -393,13 +393,13 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBR"
+        "signature": "ed25519:uN2LJdZqUZeafF4g92r2QMd5t-_g7jejL0Otu80ZuTa0LF7vFWJhRKTDyEnUERblg7tU0gYwapandjHMTjsgBx"
       },
       "verify_with": "a",
       "expect": {
         "schema": "valid",
         "signature": "invalid",
-        "signed_event_hash": "0fa4505a6dca18d53c6232398318d3bc6f9853e1da5e3c2fecd7fe26215b757d",
+        "signed_event_hash": "95745a4bc85287f6202824a86d56a8079a294b60c2029f03f204a44dffac9233",
         "counteraudit": "outcome_signature_invalid"
       }
     },
@@ -410,7 +410,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-0",
-        "event_id": "vec-revoked-1",
+        "event_id": "3ab86ee0-ae75-4429-83ca-00c2b7eea963",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -425,13 +425,13 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:xG0nNmUKzYpMdlCl-1TE9BaHs5tDzN5mpI3FQ6lBMWeZwlZX-7uNEvNKvQUDKOS3SI8ZO8lDEDbtvCq3SJVaDw"
+        "signature": "ed25519:s50qA_ewgQX-Jq5rZr6andbSC-rMNxspxtJ6jrqGew1oxqSO50TiV-2mze_zF-w2_w5RJuyHXE6ESGQp-OCBDA"
       },
       "verify_with": "a-old",
       "expect": {
         "schema": "valid",
         "signature": "valid",
-        "signed_event_hash": "0d778ac508e0ce97ef545c8950ec6634f1c18e53d8a306b195ab9ed8bf69d463",
+        "signed_event_hash": "ffc6083ab65dd903df120de463460c092ae9dfaa8538b976d04458f2b5157267",
         "counteraudit": "outcome_signer_unknown"
       }
     },
@@ -442,7 +442,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-b-1",
-        "event_id": "vec-unregistered-1",
+        "event_id": "e55514ba-addc-4774-b21c-568a58060290",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -457,14 +457,46 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:7OlWKWr6bF8tyl74kiNUmhQMX1p0hsL9L8_oUQOMl7fy3J7s49qRU2uq6lpsw1cgOOdWyxjaRmmKfSp7Dd0oCQ"
+        "signature": "ed25519:e-s6fzsh2WcqV0ls0qJuEWmyyPp41deE9o41GK8qXS0-lliwlRPzC_fCo0Un-J5sskm70mFyLhOfeTVZajIhDw"
       },
       "verify_with": "b",
       "expect": {
         "schema": "valid",
         "signature": "valid",
-        "signed_event_hash": "48eb72fdb75351067a3112e211522335c1b2f0efe139e8e736579ccd8075325d",
+        "signed_event_hash": "41591180fa818ed9df871f3f27f942cf92804f41679922ba8c19cb6f1de49a32",
         "counteraudit": "outcome_signer_unknown"
+      }
+    },
+    {
+      "id": "event-id-not-a-uuid",
+      "description": "an event_id that is not a random UUIDv4: it verifies, and CounterAudit seals no new event with it",
+      "event": {
+        "schema_version": "1",
+        "furnisher_id": "fur_vectors01",
+        "key_id": "vec-a-1",
+        "event_id": "inv-1001",
+        "subject_ref": {
+          "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
+        },
+        "occurred_at": "2026-10-31T12:00:00Z",
+        "outcome": "paid",
+        "amount": {
+          "value": "1.00",
+          "asset": "USDC",
+          "chain": "arc-testnet"
+        },
+        "evidence": {
+          "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
+          "log_ref": "levy charge 8-1"
+        },
+        "signature": "ed25519:HehZ8Qo9jm3J3H_zBYf5qaxYco4r8ZilUrELaBZKKTOQtkND6EeD9cnozy19gjAt4p-93BwR5yQxvLFR2NL7BA"
+      },
+      "verify_with": "a",
+      "expect": {
+        "schema": "valid",
+        "signature": "valid",
+        "signed_event_hash": "1f4df2aa41b2ac4c531eecd80e44116d3df970337fff24d26df8da6585c7f44b",
+        "counteraudit": "outcome_event_id_invalid"
       }
     },
     {
@@ -474,7 +506,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -490,7 +522,7 @@
           "log_ref": "levy charge 8-1"
         },
         "note": "extra",
-        "signature": "ed25519:-OMKVq3bKp7nQwLgJVXTB7NzUrCW0cbU7JL4Ie-fCX6Pbgw5Q-rz1qQpVGQed5QSCBWoimaaVt-2XdXTWqHkBw"
+        "signature": "ed25519:xVZt1BHq9iO6lm1ikEmzcUbYVgYbNP_dnJn6Iz-TAgfzUrJUp0SfZvzgEf4BG4XNq_Zn4YuX9Zgvk8Rw_2iFDg"
       },
       "verify_with": "a",
       "expect": {
@@ -510,7 +542,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -525,7 +557,7 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:6e19_zLSppVgeNZrPLSiqIzdcMqaG28I0951e0aqzpvp_H6_RE5dukEscq43n5xQZsOVICJjBM8uJmOsctxbBQ"
+        "signature": "ed25519:uN2LJdZqUZeafF4g92r2QMd5t-_g7jejL0Otu80ZuTa0LF7vFWJhRKTDyEnUERblg7tU0gYwapandjHMTjsgBw"
       },
       "verify_with": "a",
       "expect": {
@@ -541,7 +573,7 @@
       "event": {
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -556,7 +588,7 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:yJlnw_zvPSrYCmIKJURYvH099Mce6Ya-daa8AAb0g_zHlSQqL2SCJ8VsfR0zHLUJ7T6pIZ6sj0Rdqft7bXgLCQ"
+        "signature": "ed25519:RhNg5UnSvOHwEprWNWBHaI82XunD19HdD0Nv9bMSBnybOx7_79ORa-0SWYoqLFRwP80W8lEWJLLJoYqdsb1FDA"
       },
       "verify_with": "a",
       "expect": {
@@ -573,7 +605,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -590,9 +622,9 @@
         },
         "relation": {
           "type": "corrects",
-          "target_event_id": "vec-paid-1"
+          "target_event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4"
         },
-        "signature": "ed25519:Ym1_-XCY2QMBoAuuOhz9d-xU6rUAyk1-J-hQ-8Aj6oAcAZxHJDp9Q5bEQ1zTdIwoL_AqaP7ajGBcE9vXSeEzAw"
+        "signature": "ed25519:G4Q6HBnd0snjNw4ksZeWYZtXUKKwWuC6-Zsu2I57v_GHW8UED6BMVrxMYUUEFW67yhPrKrcUrv4dmww6FZneCg"
       },
       "verify_with": "a",
       "expect": {
@@ -609,7 +641,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -619,7 +651,7 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:HpUPM9Z247kZQfIFHdr1f4JuBRorOwSD3BvUaypRLaeL1qP2cISU2UT2GaT2Z22NMhdAd9m3Qmn1rzDx-eOeBA"
+        "signature": "ed25519:MjGNQ_ke3XYqH3Cn8FpfHN3aXBV8ZvWPwrJDGBfl-bFPCTq0TAYLJdPrMZC0q_ZB_UUj5Emcb-TNDHTstJPYCg"
       },
       "verify_with": "a",
       "expect": {
@@ -636,13 +668,13 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-not-delivered-1",
+        "event_id": "0cc37c42-e25d-4921-b1d4-7c3f25a0b6ec",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
         "occurred_at": "2026-10-31T12:20:00Z",
         "outcome": "not_delivered",
-        "signature": "ed25519:ZJTTys3UYDvgyGAu44yHLVjXEDHIBTI-8kGd4P8tDQeKk0N5THyKc4ZKy9bEBK3TQPlNpLfsuio7bPkmeAV9Dg"
+        "signature": "ed25519:Q8TG8PePzxi4mvfAoD7l6veLxsEDNBJLOHhb4cYF4RozFu9kbmY2Zjsb-k9sXGy7omVnWfH3vAtkf376DLDfAQ"
       },
       "verify_with": "a",
       "expect": {
@@ -659,7 +691,7 @@
         "schema_version": "1",
         "furnisher_id": "fur_vectors01",
         "key_id": "vec-a-1",
-        "event_id": "vec-paid-1",
+        "event_id": "5655ff67-86dd-4b6a-a307-3cccb10f40d4",
         "subject_ref": {
           "wallet": "0x090F6D72F49ABaBbD3FfD2ebA26D6B8A374b5b77"
         },
@@ -674,7 +706,7 @@
           "tx_hash": "0xd6fbaf6ec24b0ae502b0dd4e3360619eb9052652ecbaf51ae5566d86ad6aafe5",
           "log_ref": "levy charge 8-1"
         },
-        "signature": "ed25519:Nsj3zrGRimOsBEdvO6aHXUNWg0jCFUzXsTTyy0OBQH83n2KJWqcuYyjkCRIuUt4_7d1HQeQwPCo8t4HCivZCCw"
+        "signature": "ed25519:KEAsMwA1MJdmWyxQ_GEmN-YgykgOfAlHfIT5XWC42fGFuUomKVShp2p53VN4OWF3MryUpax2vAhzkhmih9xNCQ"
       },
       "verify_with": "a",
       "expect": {

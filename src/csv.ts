@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  NEW_EVENT_ID,
   SCHEMA_VERSION,
   SCHEMA_VERSION_V1,
   unsignedEventSchema,
@@ -91,9 +92,14 @@ export function buildEvent(
         schema_version: SCHEMA_VERSION,
         furnisher_id: furnisherId,
       });
-  return parsed.success
-    ? { event: parsed.data }
-    : { error: z.prettifyError(parsed.error) };
+  if (!parsed.success) return { error: z.prettifyError(parsed.error) };
+  if (!NEW_EVENT_ID.test(parsed.data.event_id)) {
+    return {
+      error:
+        "event_id must be a random UUIDv4 in lowercase, such as one `furnish ids` prints. It stays on record after the outcome expires, so keep your own reference in your own records, not in the event.",
+    };
+  }
+  return { event: parsed.data };
 }
 
 export function csvToEvents(
